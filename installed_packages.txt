@@ -71,6 +71,7 @@ multiprocess==0.70.16
 narwhals==2.22.1
 nest-asyncio==1.6.0
 networkx==3.6.1
+-e git+https://github.com/fesnguyen/nexus-agent.git@b57075e30c6d01a3669164f328907c76e2e4059e#egg=nexus_agent
 numpy==2.4.6
 nvidia-cublas-cu12==12.8.4.1
 nvidia-cuda-cupti-cu12==12.8.90
@@ -123,6 +124,7 @@ sentence-transformers==5.6.0
 sentencepiece==0.2.1
 setuptools==82.0.1
 shellingham==1.5.4
+simpleeval==1.0.7
 six==1.17.0
 SQLAlchemy==2.0.51
 stack-data==0.6.3
