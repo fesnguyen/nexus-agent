@@ -1,7 +1,7 @@
-from app.agent.tool_argument_extractor import (
-    ToolArgumentExtractor,
+from app.agent.response_generator import (
+    ResponseGenerator,
 )
-from app.agent.tool_router import ToolRouter
+from app.agent.tool_caller import ToolCaller
 
 from app.llm.base import BaseModel
 
@@ -16,10 +16,10 @@ class Agent:
     Nexus Agent.
 
     Responsibilities:
-        - Select the appropriate tool
-        - Extract tool arguments
-        - Validate arguments
+        - Generate tool calls
+        - Validate tool arguments
         - Execute tools
+        - Generate final responses
     """
 
     def __init__(
@@ -31,13 +31,13 @@ class Agent:
         self.model = model
         self.registry = registry
 
-        self.router = ToolRouter(
+        self.tool_caller = ToolCaller(
             model=model,
             registry=registry,
         )
 
-        self.argument_extractor = (
-            ToolArgumentExtractor(
+        self.response_generator = (
+            ResponseGenerator(
                 model=model,
             )
         )
@@ -45,58 +45,61 @@ class Agent:
     def run(
         self,
         user_input: str,
-    ):
+    ) -> str:
         """
-        Execute a user request.
+        Execute a complete agent workflow.
 
         Flow:
             User Input
                 ↓
-            Tool Router
-                ↓
-            Argument Extraction
+            Tool Call Generation
                 ↓
             Pydantic Validation
                 ↓
             Tool Execution
+                ↓
+            Response Generation
         """
 
-        # Step 1: Select tool
-        tool_name = self.router.route(
-            user_input
-        )
-
-        # Step 2: Get schema
-        schema_cls = TOOL_SCHEMAS[
-            tool_name
-        ]
-
-        # Step 3: Extract arguments
-        arguments = (
-            self.argument_extractor.extract(
-                tool_name=tool_name,
-
-                # Temporary manual schema
-                schema={
-                    field_name: str(field.annotation)
-                    for field_name, field
-                    in schema_cls.model_fields.items()
-                },
-
-                user_input=user_input,
+        # Generate tool call.
+        tool_call = (
+            self.tool_caller.generate_tool_call(
+                user_input
             )
         )
 
-        # Step 4: Validate with Pydantic
+        # Ensure the selected tool exists.
+        if (
+            tool_call.tool
+            not in self.registry.list_tools()
+        ):
+            raise ValueError(
+                f"Unknown tool: {tool_call.tool}"
+            )
+
+        # Retrieve schema for validation.
+        schema_cls = TOOL_SCHEMAS[
+            tool_call.tool
+        ]
+
+        # Validate tool arguments.
         tool_input = schema_cls(
-            **arguments
+            **tool_call.arguments
         )
 
-        # Step 5: Execute tool
+        # Retrieve tool.
         tool = self.registry.get(
-            tool_name
+            tool_call.tool
         )
 
-        return tool.run(
+        # Execute tool.
+        tool_result = tool.run(
             tool_input
+        )
+
+        # Generate final answer.
+        return self.response_generator.generate(
+            user_input=user_input,
+            tool_name=tool_call.tool,
+            tool_result=tool_result,
         )

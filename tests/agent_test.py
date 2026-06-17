@@ -31,6 +31,8 @@ agent = Agent(
     registry=registry,
 )
 
-result = agent.run("What is newest starship flight?")
+response = agent.run(
+    "What is 25 * 47?"
+)
 
-print(result)
+print(response)
