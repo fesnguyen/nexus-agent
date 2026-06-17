@@ -1,0 +1,21 @@
+# Read the documentation before extending the defaults:
+# https://docs.searxng.org/admin/settings/
+
+use_default_settings: true
+
+server:
+  secret_key: "8lS9Bwq3vJzsJTA47jKPynSStEvHJJT"
+  image_proxy: true
+
+# Enable response formats needed by Nexus.
+# HTML is used by the browser UI.
+# JSON is used by WebSearchTool API requests.
+search:
+  formats:
+    - html
+    - json
+
+# Issue: No X-Forwarded-For nor X-Real-IP header is set! when call directly
+# Don't perform IP-based request limiting.
+# Don't use the protection mechanism that expects those headers.
+limiter: false
