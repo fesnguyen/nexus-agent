@@ -26,29 +26,44 @@ Create a working agent capable of:
 * Calling tools
 * Returning responses
 
-## Components
+## Phase 1 — Agent Foundation
 
-* Agent
-* LLM Wrapper
-* Tool Router
+### Infrastructure
+- [x] Python project structure
+- [x] pyproject.toml
+- [x] Editable install (pip install -e .)
 
-## Tools
+### Tool System
+- [x] BaseTool
+- [x] ToolRegistry
+- [x] Pydantic input schemas
 
-* Calculator
-* File Reader
-* Web Search (optional)
+### Tools
+- [x] CalculatorTool
+- [x] FileReaderTool
+- [x] WebSearchTool (SearXNG)
 
-## Success Criteria
+### Search Infrastructure
+- [x] Dockerized SearXNG
+- [x] Local search API
 
-Example:
+### Model Layer
+- [x] BaseModel abstraction
+- [x] UnslothVLM backend
+- [x] Qwen3-VL-4B-Instruct (4-bit)
 
-User: "Calculate 25 * 47"
+### Agent Core
+- [x] ToolRouter
+- [x] ToolArgumentExtractor
+- [x] Agent orchestration
+- [x] End-to-end tool execution
 
-Agent:
-
-* Selects calculator tool
-* Executes tool
-* Returns result
+### Remaining
+- [ ] Structured tool calling
+- [ ] Memory
+- [ ] RAG
+- [ ] Planning
+- [ ] Multi-step workflows
 
 ---
 

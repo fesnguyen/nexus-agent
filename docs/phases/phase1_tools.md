@@ -16,6 +16,24 @@ This phase intentionally excludes:
 
 The objective is to establish a clean and extensible tool architecture.
 
+## Current Tool Execution Flow
+
+User Input
+    ↓
+ToolRouter
+    ↓
+Selected Tool
+    ↓
+ToolArgumentExtractor
+    ↓
+JSON Arguments
+    ↓
+Pydantic Validation
+    ↓
+Tool Execution
+    ↓
+Result
+
 ---
 
 # Architecture
