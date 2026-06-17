@@ -5,5 +5,23 @@
 # LangGraph
 .langgraph_api/
 
-**/__pycache__/**
-**/unsloth_compiled_cache/**
+# Python
+**/__pycache__/
+*.egg-info/
+
+# Unsloth
+**/unsloth_compiled_cache/
+
+# VSCode
+**/.vscode/
+
+# HuggingFace
+**/.cache/
+
+# RAG index
+vectorstore/*
+!vectorstore/.gitkeep
+
+# Data
+data/*
+!data/.gitkeep

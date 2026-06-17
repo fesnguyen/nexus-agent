@@ -1,0 +1,15 @@
+# Root configuration file for python project
+# Add __init__.py inside directory so python treat it as python package, not a normal directory
+# Finally pip install -e . to config root folder a python project
+
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nexus-agent"
+version = "0.1.0"
+requires-python = ">=3.12"
+
+[tool.setuptools.packages.find]
+include = ["app*"]
