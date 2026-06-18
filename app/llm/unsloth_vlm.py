@@ -3,6 +3,7 @@ from pathlib import Path
 from unsloth import FastVisionModel
 from transformers import AutoProcessor
 
+from app.agent.agent_state import AgentState
 from app.agent.tool_call import ToolCall
 from app.llm.base import BaseModel
 from app.llm.generation_config import (
@@ -10,6 +11,9 @@ from app.llm.generation_config import (
 )
 from app.agent.tool_parser import (
     parse_tool_call,
+)
+from app.llm.prompt_builder import (
+    PromptBuilder,
 )
 
 
@@ -56,35 +60,14 @@ class UnslothVLM(BaseModel):
 
     def generate_text(
         self,
-        prompt: str,
+        state: AgentState,
         image_path: str | None = None,
         tools: list[dict] | None = None,
     ) -> str:
 
-        content = []
-
-        if image_path is not None:
-            content.append(
-                {
-                    "type": "image",
-                    "image": image_path,
-                }
+        messages = PromptBuilder.build_messages(
+                state
             )
-
-        content.append(
-            {
-                "type": "text",
-                "text": prompt,
-            }
-        )
-
-        messages = [
-            {
-                "role": "user",
-                "content": content,
-            }
-        ]
-
         text = self.processor.apply_chat_template(
             messages,
             tools=tools,
@@ -116,7 +99,7 @@ class UnslothVLM(BaseModel):
 
     def generate_tool_call(
         self,
-        user_input: str,
+        state: AgentState,
         tools: list[dict],
         image_path: str | None = None,
     ) -> ToolCall | None:
@@ -146,35 +129,14 @@ class UnslothVLM(BaseModel):
                 Model answered directly without
                 requesting a tool.
         """
-        # Build chat messages.
-        content = []
+        if not state.system_prompt:
+            state.system_prompt = """
+Prioritize using tool to gather more information when user require new updates
+"""
 
-        # Append image
-        if image_path is not None:
-            image = Path(image_path)
-
-            if not image.exists():
-                raise FileNotFoundError(
-                    image_path
-                )
-            
-            content.append({
-                "type": "image",
-                "image": image_path
-            })
-
-
-        content.append({
-            "type": "text",
-            "text": user_input
-        })
-
-        messages = [
-            {
-                "role": "user",
-                "content": content
-            }
-        ]
+        messages = PromptBuilder.build_messages(
+            state,
+        )
 
         # Apply Qwen tool-calling template.
         text = self.processor.apply_chat_template(
@@ -201,7 +163,7 @@ class UnslothVLM(BaseModel):
         input_length = inputs["input_ids"].shape[1]
 
         generated_ids = outputs[:, input_length:]
-        
+
         response = self.processor.batch_decode(
             generated_ids,
             skip_special_tokens=True,

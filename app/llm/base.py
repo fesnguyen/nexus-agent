@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 
+from app.agent.agent_state import AgentState
 from app.agent.tool_call import ToolCall
 
 
@@ -11,7 +12,7 @@ class BaseModel(ABC):
     @abstractmethod
     def generate_text(
         self,
-        prompt: str,
+        state: AgentState,
         image_path: str | None = None,
     ) -> str:
         """
@@ -32,7 +33,7 @@ class BaseModel(ABC):
     @abstractmethod
     def generate_tool_call(
         self,
-        user_input: str,
+        state: AgentState,
         tools: list[dict],
         image_path: str | None = None,
     ) -> ToolCall | None:

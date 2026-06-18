@@ -2,35 +2,14 @@ from app.agent.agent_decision import (
     AgentDecision,
 )
 
+from app.agent.agent_state import (
+    AgentState,
+)
+
 from app.llm.base import BaseModel
 
 
-class Planner:
-    """
-    Decide whether the agent should:
-
-        - call a tool
-        - return a final answer
-    """
-
-    def __init__(
-        self,
-        model: BaseModel,
-    ) -> None:
-
-        self.model = model
-
-    def plan(
-        self,
-        user_input: str,
-        observations: list[str],
-    ) -> AgentDecision:
-
-        observations_text = "\n".join(
-            observations
-        )
-
-        prompt = f"""
+PLANNER_PROMPT = """
 You are an AI agent.
 
 Decide exactly one action:
@@ -50,20 +29,41 @@ tool
 or
 
 final_answer
-
-User Request:
-{user_input}
-
-Observations:
-{observations_text}
 """
 
-        response = self.model.generate_text(
-            prompt=prompt,
+
+class Planner:
+    """
+    Decide whether the agent should:
+
+        - call a tool
+        - return a final answer
+    """
+
+    def __init__(
+        self,
+        model: BaseModel,
+    ) -> None:
+
+        self.model = model
+
+    def plan(
+        self,
+        state: AgentState,
+    ) -> AgentDecision:
+
+        planner_state = state.model_copy(
+            deep=True
+        )
+
+        planner_state.system_prompt = (
+            PLANNER_PROMPT
         )
 
         response = (
-            response
+            self.model.generate_text(
+                planner_state,
+            )
             .strip()
             .lower()
         )

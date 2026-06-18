@@ -1,5 +1,6 @@
 from app.agent.agent import Agent
 
+from app.agent.tool_caller import ToolCaller
 from app.llm.unsloth_vlm import UnslothVLM
 
 from app.tools.registry import ToolRegistry
@@ -28,11 +29,11 @@ registry.register(
 
 agent = Agent(
     model=model,
-    registry=registry,
+    tool_caller=ToolCaller(registry),
 )
 
 response = agent.run(
-    "What is 25 * 47?"
+    "What is AI news today? I need newest information!"
 )
 
 print(response)

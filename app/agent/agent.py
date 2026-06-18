@@ -1,13 +1,22 @@
+from app.agent.agent_state import AgentState
 from app.agent.planner import Planner
 from app.agent.react_planner import ReActPlanner
 from app.agent.tool_call import ToolCall
 
+from app.agent.tool_caller import ToolCaller
 from app.llm.base import BaseModel
 
 from app.tools.registry import ToolRegistry
 
 
 MAX_ITERATIONS = 5
+
+FINAL_ANSWER_PROMPT = """
+Answer the user's request using the available observations.
+
+Do not call tools.
+Provide a final response.
+"""
 
 
 class Agent:
@@ -34,11 +43,11 @@ class Agent:
     def __init__(
         self,
         model: BaseModel,
-        registry: ToolRegistry,
+        tool_caller: ToolCaller,
     ) -> None:
 
         self.model = model
-        self.registry = registry
+        self.tool_caller = tool_caller
 
         self.planner = Planner(
             model=model,
@@ -67,34 +76,29 @@ class Agent:
             Final Answer
         """
 
-        observations: list[str] = []
+        state = AgentState(
+            user_input=user_input
+        )
 
         for _ in range(MAX_ITERATIONS):
 
             decision = self.planner.plan(
-                user_input=user_input,
-                observations=observations,
+                state
             )
 
             if decision.action == "final_answer":
 
-                final_prompt = f"""
-User Request:
-{user_input}
-
-Observations:
-{chr(10).join(observations)}
-
-Answer the user.
-"""
+                state.system_prompt = (
+                    FINAL_ANSWER_PROMPT,
+                )
 
                 return self.model.generate_text(
-                    prompt=final_prompt,
+                    state,
                 )
 
             tool_call = self.model.generate_tool_call(
-                user_input=user_input,
-                tools=self.registry.get_tool_schemas(),
+                state=state,
+                tools=self.tool_caller.registry.get_tool_schemas(),
             )
 
             if tool_call is None:
@@ -103,23 +107,11 @@ Answer the user.
                     "the model did not generate one."
                 )
 
-            tool = self.registry.get(
-                tool_call.tool
+            result = self.tool_caller.execute(
+                tool_call
             )
 
-            schema_cls = (
-                tool.input_schema
-            )
-
-            tool_input = schema_cls(
-                **tool_call.arguments
-            )
-
-            result = tool.run(
-                tool_input
-            )
-
-            observations.append(
+            state.observations.append(
                 f"""
 Tool: {tool_call.tool}
 
@@ -133,44 +125,4 @@ Result:
 
         raise RuntimeError(
             f"Maximum iterations ({MAX_ITERATIONS}) reached."
-        )
-
-    def _execute_tool(
-        self,
-        tool_call: ToolCall,
-    ) -> str:
-        """
-        Validate and execute a tool call.
-
-        Returns:
-            Observation string.
-        """
-
-        if (
-            tool_call.tool
-            not in self.registry.list_tools()
-        ):
-            raise ValueError(
-                f"Unknown tool: {tool_call.tool}"
-            )
-
-        schema_cls = TOOL_SCHEMAS[
-            tool_call.tool
-        ]
-
-        tool_input = schema_cls(
-            **tool_call.arguments
-        )
-
-        tool = self.registry.get(
-            tool_call.tool
-        )
-
-        result = tool.run(
-            tool_input
-        )
-
-        return (
-            f"Tool: {tool_call.tool}\n"
-            f"Result:\n{result}"
         )
