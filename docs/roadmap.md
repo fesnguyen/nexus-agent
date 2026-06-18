@@ -1,165 +1,255 @@
-# Nexus Agent Roadmap
+# Nexus V2 Roadmap
 
 ## Vision
 
-Build a local-first AI agent system demonstrating:
+Nexus is a local-first multimodal AI agent designed around modern agent architecture.
 
-* Agent architecture
-* Tool calling
-* Retrieval-Augmented Generation (RAG)
-* Long-term memory
-* Planning and reasoning
-* Multimodal understanding
-* Production-style project structure
+Core principles:
 
-This project serves as a portfolio piece for AI Engineer and Multimodal AI Engineer positions.
+* Local-first
+* Model-agnostic
+* Graph-based orchestration
+* Tool-using
+* Memory-enabled
+* Retrieval-augmented
+* Multimodal
+* Production-ready
+
+The goal is to demonstrate skills expected from modern AI Engineer and Multimodal AI Engineer roles.
 
 ---
 
-# Phase 1 — Core Agent
+# Architecture Overview
+
+## Core Stack
+
+### Orchestration
+
+* LangGraph
+
+### Agent Framework
+
+* LangChain
+
+### Models
+
+* Qwen
+* Gemma
+* Llama
+
+### Retrieval
+
+* FAISS
+* Sentence Transformers
+
+### Search
+
+* SearXNG
+
+### Fine-Tuning
+
+* Unsloth
+* PEFT
+* LoRA
+* QLoRA
+
+### Interface
+
+* Gradio
+
+---
+
+# Phase 1 — Foundation Refactor
 
 ## Goal
 
-Create a working agent capable of:
+Migrate from custom orchestration to graph-based architecture.
 
-* Receiving user requests
-* Calling tools
-* Returning responses
+## Deliverables
 
-## Phase 1 — Agent Foundation
+### Project Structure
 
-### Infrastructure
-- [x] Python project structure
-- [x] pyproject.toml
-- [x] Editable install (pip install -e .)
-
-### Tool System
-- [x] BaseTool
-- [x] ToolRegistry
-- [x] Pydantic input schemas
-
-### Tools
-- [x] CalculatorTool
-- [x] FileReaderTool
-- [x] WebSearchTool (SearXNG)
-
-### Search Infrastructure
-- [x] Dockerized SearXNG
-- [x] Local search API
+* [ ] Graph module
+* [ ] State definitions
+* [ ] Node definitions
+* [ ] Workflow definitions
 
 ### Model Layer
-- [x] BaseModel abstraction
-- [x] UnslothVLM backend
-- [x] Qwen3-VL-4B-Instruct (4-bit)
 
-### Agent Core
-- [x] ToolRouter
-- [x] ToolArgumentExtractor
-- [x] Agent orchestration
-- [x] End-to-end tool execution
+* [ ] BaseLLM
+* [ ] Model Factory
+* [ ] Qwen Backend
+* [ ] Gemma Backend
+* [ ] Llama Backend
 
-### Remaining
-- [ ] Structured tool calling
-- [ ] Memory
-- [ ] RAG
-- [ ] Planning
-- [ ] Multi-step workflows
+### Tool Layer
+
+* [ ] LangChain tool integration
+* [ ] Tool registry refactor
+* [ ] Structured tool calling
+
+### Agent Layer
+
+* [ ] ReAct-style agent
+* [ ] ToolNode execution
+* [ ] Conditional routing
+
+## Success Criteria
+
+User asks:
+
+"What is LoRA?"
+
+Agent answers directly.
+
+User asks:
+
+"Search latest Qwen release."
+
+Agent automatically invokes search tool.
 
 ---
 
-# Phase 2 — RAG System
+# Phase 2 — Knowledge System
 
 ## Goal
 
-Allow the agent to answer questions using local knowledge.
+Enable retrieval from local knowledge.
 
 ## Components
 
-* Document Loader
-* Chunking
-* Embedding Model
-* FAISS Vector Store
-* Retriever
+### Document Processing
+
+* [ ] Document loader
+* [ ] Markdown loader
+* [ ] PDF loader
+
+### Indexing
+
+* [ ] Chunking pipeline
+* [ ] Embedding pipeline
+* [ ] FAISS storage
+
+### Retrieval
+
+* [ ] Retriever
+* [ ] Context builder
 
 ## Data Sources
 
 knowledge/
 
 * ai/
-* llm/
 * ml/
+* llm/
 * notes/
 
 ## Success Criteria
 
 User:
-"What is LoRA?"
+
+"What is QLoRA?"
 
 Agent:
 
 * Retrieves relevant chunks
 * Uses retrieved context
-* Generates grounded answer
+* Produces grounded response
 
 ---
 
-# Phase 3 — Memory
+# Phase 3 — Memory System
 
 ## Goal
 
-Provide persistent user memory.
+Enable persistent memory across sessions.
 
 ## Components
 
-* Memory Manager
-* User Profile Store
-* Conversation History Store
+### Short-Term Memory
+
+* [ ] LangGraph Checkpointer
+* [ ] Conversation State
+
+### Long-Term Memory
+
+* [ ] User Profile Store
+* [ ] Preference Memory
+* [ ] Semantic Memory
+
+### Storage
+
+* [ ] SQLite
+* [ ] Vector Memory
 
 ## Success Criteria
 
 User:
+
 "I prefer Python."
 
 Later:
 
-"What language should I use?"
+"What language should I learn?"
 
 Agent remembers preference.
 
 ---
 
-# Phase 4 — Planning Agent
+# Phase 4 — Advanced Agent
 
 ## Goal
 
-Support multi-step reasoning and execution.
+Support planning and multi-step execution.
 
 ## Components
 
-* Planner
-* Executor
-* Observation Loop
+### Planner
 
-## Example
+* [ ] Task decomposition
+* [ ] Goal generation
+
+### Executor
+
+* [ ] Tool execution
+* [ ] Observation collection
+
+### Reflection
+
+* [ ] Self-check
+* [ ] Replanning
+
+## Workflow
+
+Plan
+→ Execute
+→ Observe
+→ Reflect
+→ Replan
+→ Finish
+
+## Success Criteria
 
 User:
-"Summarize transformers and save notes."
 
-Plan:
+"Research LangGraph and save notes."
 
-1. Retrieve information
-2. Generate summary
-3. Save file
+Agent:
+
+1. Searches
+2. Summarizes
+3. Writes file
+4. Returns result
 
 ---
 
-# Phase 5 — Multimodal Agent
+# Phase 5 — Multimodal Intelligence
 
 ## Goal
 
-Enable image understanding.
+Enable visual understanding.
 
-## Candidate Models
+## Models
 
 * Qwen3-VL
 * Gemma Vision
@@ -167,105 +257,203 @@ Enable image understanding.
 
 ## Capabilities
 
-* Image Captioning
-* Screenshot Analysis
-* Document Understanding
-* Visual Question Answering
+### Image Understanding
+
+* [ ] Image captioning
+* [ ] Visual question answering
+* [ ] Screenshot analysis
+
+### Document Understanding
+
+* [ ] OCR pipeline
+* [ ] PDF understanding
+* [ ] Table extraction
+
+## Success Criteria
+
+User uploads screenshot.
+
+Agent explains issue and suggests fixes.
 
 ---
 
-# Phase 6 — User Interface
+# Phase 6 — Advanced Retrieval
 
 ## Goal
 
-Provide an interactive interface.
-
-## Candidate Frameworks
-
-* Streamlit
-* Gradio
+Improve retrieval quality.
 
 ## Features
 
-* Chat
-* File Upload
-* Image Upload
-* Tool Logs
-* Memory Viewer
+### Search
+
+* [ ] Hybrid retrieval
+* [ ] BM25 retrieval
+* [ ] Dense retrieval
+
+### Optimization
+
+* [ ] Query rewrite
+* [ ] Reranking
+* [ ] Context compression
+
+### Evaluation
+
+* [ ] Retrieval benchmark
+* [ ] Recall metrics
 
 ---
 
-# Phase 7 — Benchmarking
+# Phase 7 — Fine-Tuning Platform
 
 ## Goal
 
-Measure system performance.
+Support local model adaptation.
 
-## Metrics
+## Frameworks
 
-* Latency
-* Retrieval Time
-* Tool Execution Time
-* Token Usage
-
-## Output
-
-benchmark_results.csv
-
----
-
-# Phase 8 — Model Adaptation & Fine-Tuning
-
-## Goal
-
-Customize local LLM/VLM models for domain-specific tasks.
-
-## Framework
-
-- Unsloth
-- PEFT
-- LoRA
-- QLoRA
-
-## Candidate Models
-
-- Qwen3-4B
-- Qwen3-VL-4B
-- Gemma 3
-- Llama 3
+* Unsloth
+* PEFT
 
 ## Tasks
 
-- Instruction Tuning
-- Domain Adaptation
-- Vision-Language Fine-Tuning
-- Tool-Use Fine-Tuning
+### LLM
+
+* [ ] Instruction tuning
+* [ ] Domain adaptation
+* [ ] Tool-use tuning
+
+### VLM
+
+* [ ] Vision-language tuning
+* [ ] OCR adaptation
+* [ ] Screenshot understanding
+
+### Evaluation
+
+* [ ] Benchmark suite
+* [ ] Adapter comparison
 
 ## Deliverables
 
-- Training pipeline
-- Evaluation pipeline
-- Adapter management
-- Benchmark reports
+* Training pipeline
+* Evaluation pipeline
+* Adapter manager
+
+---
+
+# Phase 8 — User Interface
+
+## Goal
+
+Provide production-style interaction.
+
+## Features
+
+### Chat
+
+* [ ] Chat interface
+* [ ] Streaming responses
+
+### Files
+
+* [ ] File upload
+* [ ] Image upload
+
+### Observability
+
+* [ ] Tool traces
+* [ ] Graph visualization
+* [ ] Memory viewer
+
+### Configuration
+
+* [ ] Model selector
+* [ ] Retrieval settings
+
+---
+
+# Phase 9 — Evaluation & Benchmarking
+
+## Goal
+
+Measure agent quality and performance.
+
+## Metrics
+
+### Agent
+
+* [ ] Task success rate
+* [ ] Tool success rate
+
+### Retrieval
+
+* [ ] Recall
+* [ ] Precision
+
+### Performance
+
+* [ ] Latency
+* [ ] Token usage
+* [ ] Tool execution time
+
+### Output
+
+* benchmark_results.csv
+* evaluation_report.md
+
+---
+
+# Phase 10 — Deployment
+
+## Goal
+
+Package Nexus as a reusable AI platform.
+
+## Components
+
+### API
+
+* [ ] FastAPI server
+* [ ] REST endpoints
+
+### Packaging
+
+* [ ] Docker image
+* [ ] Docker Compose
+
+### Distribution
+
+* [ ] Hugging Face Space
+* [ ] Local installer
+
+## Success Criteria
+
+Single command launch:
+
+docker compose up
+
+Nexus becomes available through UI and API.
+
+---
 
 # Stretch Goals
 
-## Advanced RAG
+## Agent Systems
 
-* Hybrid Search
-* Query Rewrite
-* Reranking
-* Context Compression
+* [ ] Multi-agent architecture
+* [ ] Specialized agents
+* [ ] Agent collaboration
 
-## Agent Enhancements
+## Research Features
 
-* Multi-Agent Collaboration
-* Reflection Loop
-* Self-Correction
+* [ ] Deep research workflow
+* [ ] Autonomous report generation
+* [ ] Reflection loops
 
-## Deployment
+## Production Features
 
-* Docker
-* FastAPI
-* Local API Server
-* Hugging Face Space Demo
+* [ ] Authentication
+* [ ] User management
+* [ ] Observability dashboard
+* [ ] Monitoring
