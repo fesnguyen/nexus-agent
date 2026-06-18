@@ -30,7 +30,7 @@ class ReActPlanner:
             tools=self._build_tool_descriptions(),
         )
 
-        response = self.model.generate(
+        response = self.model.generate_text(
             prompt
         )
 

@@ -25,9 +25,10 @@ tools = registry.get_tool_schemas()
 
 model = UnslothVLM("unsloth/Qwen3-VL-4B-Instruct-unsloth-bnb-4bit")
 
-response = model.generate(
-    prompt="What is 25 * 47?",
+response = model.generate_tool_call(
+    user_input="What is 25 * 47?",
     tools=tools,
 )
 
 print(response)
+print(type(response))

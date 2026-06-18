@@ -27,6 +27,6 @@ class ResponseGenerator:
             tool_result=tool_result,
         )
 
-        return self.model.generate(
+        return self.model.generate_text(
             prompt
         )

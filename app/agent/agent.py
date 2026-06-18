@@ -1,10 +1,10 @@
+from app.agent.planner import Planner
 from app.agent.react_planner import ReActPlanner
 from app.agent.tool_call import ToolCall
 
 from app.llm.base import BaseModel
 
 from app.tools.registry import ToolRegistry
-from app.tools.schema_registry import TOOL_SCHEMAS
 
 
 MAX_ITERATIONS = 5
@@ -40,9 +40,8 @@ class Agent:
         self.model = model
         self.registry = registry
 
-        self.planner = ReActPlanner(
+        self.planner = Planner(
             model=model,
-            registry=registry,
         )
 
     def run(
@@ -50,49 +49,86 @@ class Agent:
         user_input: str,
     ) -> str:
         """
-        Execute an iterative ReAct loop.
+        Execute the agent workflow.
 
-        Args:
-            user_input:
-                Original user request.
-
-        Returns:
-            Final agent response.
+        Flow:
+            User Request
+                ↓
+            Planner
+                ↓
+            Tool?
+                ↓
+            Tool Execution
+                ↓
+            Observation
+                ↓
+            Planner
+                ↓
+            Final Answer
         """
 
         observations: list[str] = []
 
-        for step in range(MAX_ITERATIONS):
+        for _ in range(MAX_ITERATIONS):
 
-            action = self.planner.plan(
+            decision = self.planner.plan(
                 user_input=user_input,
                 observations=observations,
             )
 
-            # Agent decided it can answer.
-            if action.action == "final_answer":
+            if decision.action == "final_answer":
 
-                return action.content
+                final_prompt = f"""
+User Request:
+{user_input}
 
-            # Agent decided to use a tool.
-            if action.action == "tool":
+Observations:
+{chr(10).join(observations)}
 
-                tool_call = ToolCall.model_validate(
-                    action.content
+Answer the user.
+"""
+
+                return self.model.generate_text(
+                    prompt=final_prompt,
                 )
 
-                observation = self._execute_tool(
-                    tool_call
+            tool_call = self.model.generate_tool_call(
+                user_input=user_input,
+                tools=self.registry.get_tool_schemas(),
+            )
+
+            if tool_call is None:
+                raise RuntimeError(
+                    "Planner requested a tool but "
+                    "the model did not generate one."
                 )
 
-                observations.append(
-                    observation
-                )
+            tool = self.registry.get(
+                tool_call.tool
+            )
 
-                continue
+            schema_cls = (
+                tool.input_schema
+            )
 
-            raise ValueError(
-                f"Unknown action: {action.action}"
+            tool_input = schema_cls(
+                **tool_call.arguments
+            )
+
+            result = tool.run(
+                tool_input
+            )
+
+            observations.append(
+                f"""
+Tool: {tool_call.tool}
+
+Arguments:
+{tool_call.arguments}
+
+Result:
+{result}
+"""
             )
 
         raise RuntimeError(
