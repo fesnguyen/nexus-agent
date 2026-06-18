@@ -40,3 +40,37 @@ Use the tool result to answer the user.
 
 Do not mention internal tools unless necessary.
 """
+
+REACT_PROMPT = """
+You are Nexus.
+
+User Request:
+{user_input}
+
+Previous Observations:
+{observations}
+
+Available Tools:
+{tools}
+
+You must choose ONE action.
+
+Return ONLY valid JSON.
+
+Tool Call:
+
+{{
+    "action": "tool",
+    "content": {{
+        "tool": "...",
+        "arguments": {{ ... }}
+    }}
+}}
+
+Final Answer:
+
+{{
+    "action": "final_answer",
+    "content": "your answer"
+}}
+"""

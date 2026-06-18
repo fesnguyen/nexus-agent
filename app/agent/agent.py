@@ -1,25 +1,34 @@
-from app.agent.response_generator import (
-    ResponseGenerator,
-)
-from app.agent.tool_caller import ToolCaller
+from app.agent.react_planner import ReActPlanner
+from app.agent.tool_call import ToolCall
 
 from app.llm.base import BaseModel
 
 from app.tools.registry import ToolRegistry
-from app.tools.schema_registry import (
-    TOOL_SCHEMAS,
-)
+from app.tools.schema_registry import TOOL_SCHEMAS
+
+
+MAX_ITERATIONS = 5
 
 
 class Agent:
     """
-    Nexus Agent.
+    Nexus ReAct Agent.
 
-    Responsibilities:
-        - Generate tool calls
-        - Validate tool arguments
-        - Execute tools
-        - Generate final responses
+    Flow:
+
+        User Input
+            ↓
+        Planner
+            ↓
+        Tool Call
+            ↓
+        Tool Execution
+            ↓
+        Observation
+            ↓
+        Planner
+            ↓
+        Final Answer
     """
 
     def __init__(
@@ -31,15 +40,9 @@ class Agent:
         self.model = model
         self.registry = registry
 
-        self.tool_caller = ToolCaller(
+        self.planner = ReActPlanner(
             model=model,
             registry=registry,
-        )
-
-        self.response_generator = (
-            ResponseGenerator(
-                model=model,
-            )
         )
 
     def run(
@@ -47,28 +50,66 @@ class Agent:
         user_input: str,
     ) -> str:
         """
-        Execute a complete agent workflow.
+        Execute an iterative ReAct loop.
 
-        Flow:
-            User Input
-                ↓
-            Tool Call Generation
-                ↓
-            Pydantic Validation
-                ↓
-            Tool Execution
-                ↓
-            Response Generation
+        Args:
+            user_input:
+                Original user request.
+
+        Returns:
+            Final agent response.
         """
 
-        # Generate tool call.
-        tool_call = (
-            self.tool_caller.generate_tool_call(
-                user_input
+        observations: list[str] = []
+
+        for step in range(MAX_ITERATIONS):
+
+            action = self.planner.plan(
+                user_input=user_input,
+                observations=observations,
             )
+
+            # Agent decided it can answer.
+            if action.action == "final_answer":
+
+                return action.content
+
+            # Agent decided to use a tool.
+            if action.action == "tool":
+
+                tool_call = ToolCall.model_validate(
+                    action.content
+                )
+
+                observation = self._execute_tool(
+                    tool_call
+                )
+
+                observations.append(
+                    observation
+                )
+
+                continue
+
+            raise ValueError(
+                f"Unknown action: {action.action}"
+            )
+
+        raise RuntimeError(
+            f"Maximum iterations ({MAX_ITERATIONS}) reached."
         )
 
-        # Ensure the selected tool exists.
+    def _execute_tool(
+        self,
+        tool_call: ToolCall,
+    ) -> str:
+        """
+        Validate and execute a tool call.
+
+        Returns:
+            Observation string.
+        """
+
         if (
             tool_call.tool
             not in self.registry.list_tools()
@@ -77,29 +118,23 @@ class Agent:
                 f"Unknown tool: {tool_call.tool}"
             )
 
-        # Retrieve schema for validation.
         schema_cls = TOOL_SCHEMAS[
             tool_call.tool
         ]
 
-        # Validate tool arguments.
         tool_input = schema_cls(
             **tool_call.arguments
         )
 
-        # Retrieve tool.
         tool = self.registry.get(
             tool_call.tool
         )
 
-        # Execute tool.
-        tool_result = tool.run(
+        result = tool.run(
             tool_input
         )
 
-        # Generate final answer.
-        return self.response_generator.generate(
-            user_input=user_input,
-            tool_name=tool_call.tool,
-            tool_result=tool_result,
+        return (
+            f"Tool: {tool_call.tool}\n"
+            f"Result:\n{result}"
         )
