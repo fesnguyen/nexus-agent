@@ -1,5 +1,6 @@
 from typing import Any
 
+from pydantic import BaseModel
 import requests
 
 from app.tools.base import BaseTool
@@ -20,6 +21,8 @@ class WebSearchTool(BaseTool):
     description = (
         "Search the web using SearXNG."
     )
+
+    input_schema = WebSearchInput
 
     def __init__(
         self,

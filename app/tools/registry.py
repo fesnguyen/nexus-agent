@@ -1,4 +1,7 @@
 from app.tools.base import BaseTool
+from app.llm.tool_schema import (
+    tool_to_schema,
+)
 
 
 class ToolRegistry:
@@ -33,6 +36,20 @@ class ToolRegistry:
             raise ValueError(
                 f"Tool '{name}' not found."
             ) from exc
+
+
+    def get_tool_schemas(
+        self,
+    ) -> list[dict]:
+        """
+        Return all tools as OpenAI/HF-compatible
+        function schemas.
+        """
+
+        return [
+            tool_to_schema(tool)
+            for tool in self._tools.values()
+        ]
 
 
     def list_tools(self) -> list[str]:

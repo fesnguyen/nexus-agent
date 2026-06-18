@@ -1,5 +1,7 @@
 from pathlib import Path
 
+from pydantic import BaseModel
+
 from app.tools.base import BaseTool
 from app.tools.schemas import FileReaderInput
 
@@ -22,6 +24,8 @@ class FileReaderTool(BaseTool):
     description = (
         "Read the contents of a file from the workspace."
     )
+
+    input_schema = FileReaderInput
 
     def __init__(self, workspace_root: Path | None = None):
         """

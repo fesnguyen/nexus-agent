@@ -20,6 +20,8 @@ class CalculatorTool(BaseTool):
         "Evaluate arithmetic expressions safely."
     )
 
+    input_schema = CalculatorInput
+
     def run(self, tool_input: CalculatorInput) -> str:
         """
         Execute a calculation.

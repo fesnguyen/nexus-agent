@@ -1,13 +1,11 @@
-from app.agent.tool_caller import ToolCaller
 from app.llm.unsloth_vlm import UnslothVLM
-from app.tools.registry import ToolRegistry
 from app.tools.calculator import CalculatorTool
-from app.tools.file_reader import FileReaderTool
-from app.tools.web_search import WebSearchTool
+from app.llm.tool_schema import tool_to_schema
+from pprint import pprint as ppr
 
-model = UnslothVLM(
-    model_name="unsloth/Qwen3-VL-4B-Instruct-unsloth-bnb-4bit"
-)
+from app.tools.file_reader import FileReaderTool
+from app.tools.registry import ToolRegistry
+from app.tools.web_search import WebSearchTool
 
 registry = ToolRegistry()
 
@@ -23,10 +21,13 @@ registry.register(
     WebSearchTool()
 )
 
-tool_caller = ToolCaller(model, registry)
+tools = registry.get_tool_schemas()
 
-tool_call = tool_caller.generate_tool_call(
-    "Search latest Qwen3 release"
+model = UnslothVLM("unsloth/Qwen3-VL-4B-Instruct-unsloth-bnb-4bit")
+
+response = model.generate(
+    prompt="What is 25 * 47?",
+    tools=tools,
 )
 
-print(tool_call)
+print(response)

@@ -54,6 +54,7 @@ class UnslothVLM(BaseModel):
         self,
         prompt: str,
         image_path: str | None = None,
+        tools: list[dict] | None = None,
     ) -> str:
 
         content = []
@@ -82,6 +83,7 @@ class UnslothVLM(BaseModel):
 
         text = self.processor.apply_chat_template(
             messages,
+            tools=tools,
             tokenize=False,
             add_generation_prompt=True,
         )
