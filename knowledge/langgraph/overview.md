@@ -6,7 +6,10 @@
   + The non deterministic nature of AI requires checkpoints, approvals, and testing: LangGraph provide Human-in-the-loop to collaborate with the user (Waiting for user to type), Tracing, Observation and Evaluation (LangSmith)
 
 * LangGraph has 4 main components: 
-
+  + State (Shared Data Structure)
+  + Nodes (The Workers)
+  + Edges (The Traffic Controller)
+  + StateGraph (The Blueprint & Compiler)
 
 ## Requisites
 Ensure you're using Python 3.11 - 3.13. This version is required for optimal compatibility with LangGraph
