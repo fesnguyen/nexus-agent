@@ -3,14 +3,14 @@ from typing import TypedDict
 
 from langgraph.graph.message import add_messages
 
-from app.graph.schemas.memory import MemoryState
-from app.graph.schemas.multimodal import MultimodalState
-from app.graph.schemas.planning import PlanningState
-from app.graph.schemas.retrieval import RetrievalState
-from app.graph.schemas.tool import ToolState
+from app.graph.states.memory import MemoryState
+from app.graph.states.multimodal import MultimodalState
+from app.graph.states.planning import PlanningState
+from app.graph.states.retrieval import RetrievalState
+from app.graph.states.tool import ToolState
 
 
-class NexusState(TypedDict, total=False):
+class State(TypedDict, total=False):
 
     # conversation
     messages: Annotated[list, add_messages]
