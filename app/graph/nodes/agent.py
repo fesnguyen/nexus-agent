@@ -1,7 +1,11 @@
+from app.graph.nodes.factory import ModelFactory
 from app.models.qwen import QwenModel
 
 
-model = QwenModel()
+model = ModelFactory.create(
+    "qwen",
+    "unsloth/Qwen3-4B-Instruct-2507-bnb-4bit"
+)
 
 
 def agent_node(state):

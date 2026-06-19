@@ -1,0 +1,10 @@
+model:
+  provider: qwen_unsloth
+
+  model_name: unsloth/Qwen3-4B-Instruct-2507-bnb-4bit
+
+  load_in_4bit: true
+
+  temperature: 0.0
+
+  max_new_tokens: 1024
