@@ -1,5 +1,4 @@
 from app.graph.nodes.factory import ModelFactory
-from app.models.qwen import QwenModel
 
 
 model = ModelFactory.create(

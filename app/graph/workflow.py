@@ -3,6 +3,8 @@ from langgraph.graph import START
 from langgraph.graph import StateGraph
 
 from app.graph.nodes.agent import agent_node
+from app.graph.nodes.tool import tool_node
+from app.graph.nodes.finish import finish_node
 from app.graph.state import State
 
 
@@ -14,23 +16,6 @@ def route_agent(state):
         return "tool"
 
     return "finish"
-
-
-def tool_node(state):
-
-    print(
-        f"Executing tool: "
-        f"{state['tools']['selected_tool']}"
-    )
-
-    return {
-        "response": "Tool execution placeholder.",
-        "next_node": "finish",
-    }
-
-
-def finish_node(state):
-    return state
 
 
 def build_graph():

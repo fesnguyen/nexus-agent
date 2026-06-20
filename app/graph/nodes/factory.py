@@ -1,6 +1,6 @@
 from app.models.qwen import QwenModel
-from app.models.gemma import GemmaModel
-from app.models.llama import LlamaModel
+# from app.models.gemma import GemmaModel
+# from app.models.llama import LlamaModel
 
 
 class ModelFactory:
@@ -18,11 +18,11 @@ class ModelFactory:
                     **kwargs,
                 )
 
-        if provider == "gemma":
-            return GemmaModel(model_name)
+        # if provider == "gemma":
+        #     return GemmaModel(model_name)
 
-        if provider == "llama":
-            return LlamaModel(model_name)
+        # if provider == "llama":
+        #     return LlamaModel(model_name)
 
         raise ValueError(
             f"Unknown provider: {provider}"
