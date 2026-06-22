@@ -2,31 +2,36 @@ import json
 
 from app.contracts.agent_decision import AgentDecision
 from app.models.base import BaseLLM
+from app.tools.registry import ToolRegistry
 
 from unsloth import FastLanguageModel
 import re
 
 SYSTEM_PROMPT = """
-You are Nexus, an AI agent.
+You are Nexus.
 
-Always respond with valid JSON.
+Always return valid JSON.
 
 Schema:
 
 {
-  "thought": "short reasoning",
-  "action": "respond|tool|retrieve|memory|plan|finish",
-  "response": "optional response",
-  "tool_call": {
-    "name": "tool name",
-    "arguments": {}
-  }
+  "thought": string,
+  "response": string | null,
+  "tool_calls": [
+    {
+      "name": string,
+      "args": object
+    }
+  ]
 }
 
 Rules:
 
-- Use action="respond" for normal questions.
-- Use action="tool" when external tools are required.
+- "thought" is a concise and targeted summary of the conversation.
+- "response" contains the final answer.
+- If a tool is needed, response must be null.
+- If tools are needed, populate "tool_calls".
+- If no tool is needed, tool_calls must be empty.
 - Output JSON only.
 """
 
@@ -36,12 +41,13 @@ class QwenModel(BaseLLM):
     def __init__(
         self,
         model_name: str,
-        max_new_tokens: int = 1024,
-        temperature: float = 0.0,
+        tool_registry: ToolRegistry,
+        **kwargs,
     ):
         self.model_name = model_name
-        self.max_new_tokens = max_new_tokens
-        self.temperature = temperature
+        self.tool_registry = tool_registry
+        self.max_new_tokens = kwargs.get("max_new_tokens", 1024)
+        self.temperature = kwargs.get("temperature", 0.0)
 
         print(f"Loading model: {model_name}")
 
@@ -92,6 +98,7 @@ class QwenModel(BaseLLM):
 
         return self.tokenizer.apply_chat_template(
             chat_messages,
+            tools=self.tool_registry.get_tool_schemas(),
             tokenize=False,
             add_generation_prompt=True,
         )

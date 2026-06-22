@@ -1,30 +1,37 @@
-from app.graph.nodes.factory import ModelFactory
+from app.core.app import container
+from app.graph.state import State
+from langchain_core.messages import AIMessage
 
+def agent_node(state: State):
 
-model = ModelFactory.create(
-    "qwen",
-    "unsloth/Qwen3-4B-Instruct-2507-bnb-4bit"
-)
-
-
-def agent_node(state):
-
-    decision = model.invoke(
-        state["messages"]
+    decision = container.model.invoke(
+        messages=state["messages"]
     )
 
-    updates = {
-        "next_node": decision.action,
-    }
+    #
+    # Tool call
+    #
+    if decision.tool_calls:
 
-    if decision.response:
-        updates["response"] = decision.response
-
-    if decision.tool_call:
-
-        updates["tools"] = {
-            "selected_tool": decision.tool_call.name,
-            "tool_input": decision.tool_call.arguments,
+        return {
+            "messages": [
+                AIMessage(
+                    content="",
+                    tool_calls=[
+                        tool.model_dump()
+                        for tool in decision.tool_calls
+                    ],
+                )
+            ]
         }
 
-    return updates
+    #
+    # Final answer
+    #
+    return {
+        "messages": [
+            AIMessage(
+                content=decision.response
+            )
+        ]
+    }

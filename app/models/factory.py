@@ -1,4 +1,5 @@
 from app.models.qwen import QwenModel
+from app.tools.registry import ToolRegistry
 # from app.models.gemma import GemmaModel
 # from app.models.llama import LlamaModel
 
@@ -9,12 +10,14 @@ class ModelFactory:
     def create(
         provider: str,
         model_name: str,
+        tool_registry: ToolRegistry,
         **kwargs,
     ):
 
         if provider == "qwen":
             return QwenModel(
                     model_name,
+                    tool_registry,
                     **kwargs,
                 )
 

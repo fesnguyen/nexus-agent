@@ -23,7 +23,7 @@ class WebSearchTool(BaseTool):
 
     input_schema = WebSearchInput
 
-    def __init__(
+    def __init__( 
         self,
         searx_url: str = "http://localhost:8080"
     ) -> None:
@@ -31,7 +31,7 @@ class WebSearchTool(BaseTool):
 
     def run(
         self,
-        tool_input: WebSearchInput
+        **kwargs,
     ) -> list[dict[str, Any]]:
         """
         Execute a web search.
@@ -43,6 +43,8 @@ class WebSearchTool(BaseTool):
         Returns:
             Normalized search results.
         """
+        # Unpack the dictionary keys directly into your Pydantic model
+        tool_input = WebSearchInput(**kwargs)
 
         try:
             response = requests.get(

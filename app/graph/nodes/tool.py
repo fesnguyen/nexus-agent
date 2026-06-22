@@ -1,20 +1,24 @@
-from app.tools.registry import ToolRegistry
+from langchain_core.messages import ToolMessage
+from app.core.app import container
 
 def tool_node(state):
 
-    tool_name = state["tools"]["selected_tool"]
+    first_tool_call = state["messages"][-1].tool_calls[0]
 
-    tool_input = state["tools"]["tool_input"]
+    tool_name = first_tool_call["name"]
+    tool_args = first_tool_call["args"]
+    tool_id = first_tool_call["id"]
 
-    registry = ToolRegistry(registry_all_available=True)
-    
-    tool = registry.get(tool_name)
+    tool = container.tool_registry.get(tool_name)
 
-    result = tool.run(**tool_input)
+    result = tool.run(**tool_args)
 
     return {
-        "tools": {
-            "tool_results": [result]
-        },
-        "next_node": "finish"
+        "messages": [
+            ToolMessage(
+                content=str(result),
+                tool_call_id=tool_id,
+                name=tool_name,
+            )
+        ],
     }

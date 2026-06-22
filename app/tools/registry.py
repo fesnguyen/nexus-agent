@@ -12,13 +12,13 @@ class ToolRegistry:
     Central registry storing all tools available to Nexus.
     """
 
-    def __init__(self, registry_all_available = False):
+    def __init__(self, register_all_available = False):
         self._tools: dict[str, BaseTool] = {}
-        if registry_all_available:
-            self.registry_all_available()
+        if register_all_available:
+            self.register_all_available()
 
     
-    def registry_all_available(self) -> None:
+    def register_all_available(self) -> None:
         """
         Registry all tools available to Nexus.
         """

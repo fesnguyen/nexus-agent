@@ -14,18 +14,15 @@ class AgentDecision(BaseModel):
     """
 
     thought: str = Field(
-        description="Reasoning summary."
+        description="Reasoning summary.",
     )
 
-    action: Literal[
-        "respond",
-        "tool",
-        "retrieve",
-        "memory",
-        "plan",
-        "finish",
-    ]
+    response: str | None = Field(
+        default=None,
+        description="Final answer or response to the user query.",
+    )
 
-    response: str | None = None
-
-    tool_call: ToolCall | None = None
+    tool_calls: list[ToolCall] = Field(
+        default_factory=list,
+        description="Tools to execute before generating a final answer."
+    )

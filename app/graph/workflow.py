@@ -1,18 +1,24 @@
 from langgraph.graph import END
 from langgraph.graph import START
 from langgraph.graph import StateGraph
+from langchain_core.messages import AIMessage
 
 from app.graph.nodes.agent import agent_node
 from app.graph.nodes.tool import tool_node
-from app.graph.nodes.finish import finish_node
 from app.graph.state import State
 
 
 def route_agent(state):
+    """
+    Route the agent node in the state graph.
+    Currently sequential task execution
+    """
+    last_message = state["messages"][-1]
 
-    action = state["next_node"]
-
-    if action == "tool":
+    if (
+        isinstance(last_message, AIMessage)
+        and last_message.tool_calls
+    ):
         return "tool"
 
     return "finish"
@@ -32,11 +38,6 @@ def build_graph():
         tool_node,
     )
 
-    graph.add_node(
-        "finish",
-        finish_node,
-    )
-
     graph.add_edge(
         START,
         "agent",
@@ -45,16 +46,15 @@ def build_graph():
     graph.add_conditional_edges(
         "agent",
         route_agent,
+        {
+            "tool": "tool",
+            "finish": END,
+        },
     )
 
     graph.add_edge(
         "tool",
-        "finish",
-    )
-
-    graph.add_edge(
-        "finish",
-        END,
+        "agent",
     )
 
     return graph.compile()
