@@ -164,6 +164,23 @@ class SQLiteMemoryStore(BaseMemoryStore):
                 """
             )
 
+            # ------------------------------------------
+            # FAISS index creation
+            # ------------------------------------------
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS faiss_mapping (
+
+                    faiss_id INTEGER PRIMARY KEY,
+
+                    memory_id TEXT NOT NULL UNIQUE,
+
+                    FOREIGN KEY(memory_id)
+                        REFERENCES memories(id)
+                )
+                """
+            )
+
             conn.commit()
 
     # ==================================================
@@ -316,3 +333,76 @@ class SQLiteMemoryStore(BaseMemoryStore):
             return ""
         escaped_input = user_input.replace('"', '""')
         return f'"{escaped_input}"'
+    
+    #===================================FAISS Store=========================================
+    def get_next_faiss_id(
+        self,
+    ) -> int:
+
+        with self._connection() as conn:
+
+            row = conn.execute(
+                """
+                SELECT MAX(faiss_id)
+                FROM faiss_mapping
+                """
+            ).fetchone()
+
+        return (
+            row[0] + 1
+            if row[0] is not None
+            else 1
+        )
+    
+    def save_faiss_mapping(
+        self,
+        faiss_id: int,
+        memory_id: str,
+    ) -> None:
+
+        with self._connection() as conn:
+
+            conn.execute(
+                """
+                INSERT INTO faiss_mapping(
+                    faiss_id,
+                    memory_id
+                )
+                VALUES (?, ?)
+                """,
+                (
+                    faiss_id,
+                    memory_id,
+                ),
+            )
+
+            conn.commit()
+
+    def get_memory_ids_from_faiss(
+        self,
+        faiss_ids: list[int],
+    ) -> list[str]:
+
+        if not faiss_ids:
+            return []
+
+        placeholders = ",".join(
+            "?"
+            for _ in faiss_ids
+        )
+
+        with self._connection() as conn:
+
+            rows = conn.execute(
+                f"""
+                SELECT memory_id
+                FROM faiss_mapping
+                WHERE faiss_id IN ({placeholders})
+                """,
+                faiss_ids,
+            ).fetchall()
+
+        return [
+            row["memory_id"]
+            for row in rows
+        ]

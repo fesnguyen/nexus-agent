@@ -8,3 +8,10 @@ MEMORY_DB_PATH = (
     / "memory"
     / "memory.db"
 )
+
+FAISS_INDEX_PATH = (
+    PROJECT_ROOT
+    / "data"
+    / "faiss"
+    / "memory.index"
+)

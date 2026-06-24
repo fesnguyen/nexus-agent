@@ -1,4 +1,5 @@
 from app.memory.base import BaseMemoryStore
+from app.memory.faiss_store import FaissStore
 
 
 class MemoryManager:
@@ -21,6 +22,7 @@ class MemoryManager:
     def __init__(
         self,
         store: BaseMemoryStore,
+        faiss_store: FaissStore,
     ) -> None:
 
         self.store = store
