@@ -22,7 +22,7 @@ Store only:
 
 Do NOT store: Greetings, small talk, raw tool outputs, or transient requests.
 
-Return JSON only. Keep 'content' strings self-contained.
+Return JSON only. Keep 'content' strings self-contained. The key "memories" always exist even only one memory element.
 
 Schema:
 {

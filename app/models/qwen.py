@@ -3,11 +3,11 @@ from typing import Type
 
 from pydantic import BaseModel, Field
 
-from unsloth import FastLanguageModel
 from app.contracts.agent_decision import AgentDecision
 from app.models.base import BaseLLM
 from app.tools.registry import ToolRegistry
 
+from unsloth import FastLanguageModel
 import re
 
 

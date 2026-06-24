@@ -26,6 +26,7 @@ class MemoryManager:
     ) -> None:
 
         self.store = store
+        self.faiss_store = faiss_store
 
     def retrieve_context(
         self,

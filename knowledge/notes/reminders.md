@@ -86,3 +86,14 @@ class GraphState(TypedDict):
 * BM25: The mathematical ranking algorithm used inside FTS5. It calculates a relevance score by looking at how often a keyword appears in a document compared to how common the word is across the entire database.
 
 * FAISS: A specialized library developed by Meta built for Vector Search. Instead of looking at exact keywords, it uses mathematical embeddings to find documents based on conceptual and semantic meaning.
+
+# Unsloth annoying requirement
+```
+WARNING: Unsloth should be imported before [transformers, peft] to ensure all optimizations are applied. 
+Your code may run slower or encounter memory issues without these optimizations.
+Please restructure your imports with 'import unsloth' at the top of your file. from ._gpu_init import *
+```
+* And it's truely slower, fixed by reorder ModelFactory to the top of container
+
+# Sentence Transformers position_ids Unexpected Key
+* Zero risk

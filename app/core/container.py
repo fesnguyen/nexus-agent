@@ -1,9 +1,9 @@
+from app.models.factory import ModelFactory
 from app.memory.extractor import MemoryExtractor
 from app.memory.faiss_store import FaissStore
 from app.memory.manager import MemoryManager
 from app.memory.sqlite_store import SQLiteMemoryStore
 from app.models.base import BaseLLM
-from app.models.factory import ModelFactory
 from app.tools.registry import ToolRegistry
 from app.memory.configs.settings import (
     MEMORY_DB_PATH,
