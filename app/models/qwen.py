@@ -1,4 +1,7 @@
 import json
+from typing import Type
+
+from pydantic import BaseModel, Field
 
 from app.contracts.agent_decision import AgentDecision
 from app.models.base import BaseLLM
@@ -7,46 +10,16 @@ from app.tools.registry import ToolRegistry
 from unsloth import FastLanguageModel
 import re
 
-SYSTEM_PROMPT = """
-You are Nexus.
-
-Always return valid JSON.
-
-Schema:
-
-{
-  "thought": string,
-  "response": string | null,
-  "tool_calls": [
-    {
-      "name": string,
-      "args": object
-    }
-  ]
-}
-
-Rules:
-
-- "thought" is a concise and targeted summary of the conversation.
-- "response" contains the final answer.
-- If a tool is needed, response must be null.
-- If tools are needed, populate "tool_calls".
-- If no tool is needed, tool_calls must be empty.
-- Output JSON only.
-"""
-
 
 class QwenModel(BaseLLM):
 
     def __init__(
         self,
         model_name: str,
-        tool_registry: ToolRegistry,
         **kwargs,
     ):
         self.model_name = model_name
-        self.tool_registry = tool_registry
-        self.max_new_tokens = kwargs.get("max_new_tokens", 1024)
+        self.max_new_tokens = kwargs.get("max_new_tokens", 2048)
         self.temperature = kwargs.get("temperature", 0.0)
 
         print(f"Loading model: {model_name}")
@@ -55,7 +28,7 @@ class QwenModel(BaseLLM):
             model_name,
 
             # This also reserve memory for attention/KV-cache
-            max_seq_length=1024,
+            max_seq_length=2048,
 
             # Auto-pick BF16 (preferred) or FP16.
             dtype=None,
@@ -69,25 +42,26 @@ class QwenModel(BaseLLM):
     def _build_prompt(
         self,
         messages,
+        tool: ToolRegistry,
     ) -> str:
         """
         Convert LangChain messages into a chat prompt.
         """
 
-        chat_messages = [
-            {
-                "role": "system",
-                "content": SYSTEM_PROMPT,
-            }
-        ]
+        chat_messages = []
 
         for msg in messages:
 
             role = "user"
 
-            if hasattr(msg, "type"):
-                if msg.type == "ai":
-                    role = "assistant"
+            if msg.type == "system":
+                role = "system"
+
+            elif msg.type == "ai":
+                role = "assistant"
+
+            elif msg.type == "tool":
+                role = "tool"
 
             chat_messages.append(
                 {
@@ -98,7 +72,7 @@ class QwenModel(BaseLLM):
 
         return self.tokenizer.apply_chat_template(
             chat_messages,
-            tools=self.tool_registry.get_tool_schemas(),
+            tools=tool.get_tool_schemas(),
             tokenize=False,
             add_generation_prompt=True,
         )
@@ -106,7 +80,8 @@ class QwenModel(BaseLLM):
     def _parse_response(
         self,
         text: str,
-    ) -> AgentDecision:
+        response_model: Type[BaseModel],
+    ) -> BaseModel:
         """
         Convert model JSON output into AgentDecision.
         """
@@ -124,7 +99,7 @@ class QwenModel(BaseLLM):
 
             data = json.loads(text)
 
-            return AgentDecision.model_validate(
+            return response_model.model_validate(
                 data
             )
 
@@ -133,19 +108,18 @@ class QwenModel(BaseLLM):
             print("Failed to parse model output")
             print(e)
 
-            return AgentDecision(
-                thought="Fallback response",
-                action="respond",
-                response=text,
-            )
+            return response_model()
 
     def invoke(
         self,
         messages,
-    ) -> AgentDecision:
+        tool: ToolRegistry,
+        response_model: Type[BaseModel] = AgentDecision,
+    ) -> BaseModel:
 
         prompt = self._build_prompt(
-            messages
+            messages,
+            tool,
         )
 
         inputs = self.tokenizer(
@@ -156,6 +130,7 @@ class QwenModel(BaseLLM):
         outputs = self.model.generate(
             **inputs,
             max_new_tokens=self.max_new_tokens,
+            use_cache=True,
             temperature=self.temperature,
             do_sample=self.temperature > 0,
             pad_token_id=self.tokenizer.eos_token_id, # Prevent annoying warnings
@@ -172,5 +147,6 @@ class QwenModel(BaseLLM):
         )
 
         return self._parse_response(
-            text
+            text,
+            response_model
         )

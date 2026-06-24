@@ -26,25 +26,6 @@ class State(TypedDict, total=False):
 
     planning: PlanningState
     retrieval: RetrievalState
-    memory: MemoryState
     multimodal: MultimodalState
 
-    # =====================
-    # Tool Execution
-    # =====================
-
-    tool_calls: list[dict[str, Any]]
-    tool_results: list[dict[str, Any]]
-
-    # =====================
-    # Final Output
-    # =====================
-
-    response: str
-
-    # =====================
-    # Graph Control
-    # =====================
-
-    next_node: str
-    is_complete: bool
+    memory: MemoryState

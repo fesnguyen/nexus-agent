@@ -23,5 +23,5 @@ vectorstore/*
 !vectorstore/.gitkeep
 
 # Data
-data/*
+**/data/*
 !data/.gitkeep

@@ -79,3 +79,10 @@ class GraphState(TypedDict):
     + Pros: Deterministic and highly predictable control flow. Decouples graph routing from LLM outputs, simplifies tracking metadata (e.g., error counters), and saves tokens by keeping state fields isolated.
 
     + Cons: Higher initial architectural complexity. Requires explicit schemas, mapping logic to translate raw LLM outputs into variables, and meticulous state management.
+
+# FTS5, BM25, FAISS
+* FTS5: A built-in SQLite extension used to create "Virtual Tables" optimized for fast keyword searching across text columns.
+
+* BM25: The mathematical ranking algorithm used inside FTS5. It calculates a relevance score by looking at how often a keyword appears in a document compared to how common the word is across the entire database.
+
+* FAISS: A specialized library developed by Meta built for Vector Search. Instead of looking at exact keywords, it uses mathematical embeddings to find documents based on conceptual and semantic meaning.

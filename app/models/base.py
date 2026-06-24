@@ -1,7 +1,11 @@
 from abc import ABC
 from abc import abstractmethod
+from typing import Type
+
+from pydantic import BaseModel
 
 from app.contracts.agent_decision import AgentDecision
+from app.tools.registry import ToolRegistry
 
 
 class BaseLLM(ABC):
@@ -10,5 +14,5 @@ class BaseLLM(ABC):
     """
 
     @abstractmethod
-    def invoke(self, messages) -> AgentDecision:
+    def invoke(self, messages, tool: ToolRegistry, response_model: Type[BaseModel]) -> BaseModel:
         pass

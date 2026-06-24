@@ -10,14 +10,12 @@ class ModelFactory:
     def create(
         provider: str,
         model_name: str,
-        tool_registry: ToolRegistry,
         **kwargs,
     ):
 
         if provider == "qwen":
             return QwenModel(
                     model_name,
-                    tool_registry,
                     **kwargs,
                 )
 
