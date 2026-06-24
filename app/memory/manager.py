@@ -38,20 +38,46 @@ class MemoryManager:
         convert them into prompt context.
         """
 
-        memories = self.store.search(
+        # Lexical search
+        lexical_memories = self.store.search(
             query=query,
             limit=limit,
         )
 
-        if not memories:
-            return ""
+        # Semantic search
+        faiss_ids = self.faiss_store.search(
+            query=query,
+            k=limit,
+        )
 
+        # Load semantic memories
+        memory_ids = (
+            self.store.get_memory_ids_from_faiss(
+                faiss_ids
+            )
+        )
+        semantic_memories = (
+            self.store.get_many(
+                memory_ids
+            )
+        )
+
+        combined = {}
+
+        for memory in lexical_memories:
+            combined[memory.id] = memory
+
+        for memory in semantic_memories:
+            combined[memory.id] = memory
+
+        if not combined:
+            return ""
+        
         lines = [
             "Relevant Memory:"
         ]
 
-        for memory in memories:
-
+        for memory in combined.values():
             lines.append(
                 f"- {memory.content}"
             )

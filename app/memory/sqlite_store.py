@@ -406,3 +406,31 @@ class SQLiteMemoryStore(BaseMemoryStore):
             row["memory_id"]
             for row in rows
         ]
+    
+    def get_many(
+        self,
+        memory_ids: list[str],
+    ) -> list[Memory]:
+        if not memory_ids:
+            return []
+
+        placeholders = ",".join(
+            "?"
+            for _ in memory_ids
+        )
+
+        with self._connection() as conn:
+
+            rows = conn.execute(
+                f"""
+                SELECT *
+                FROM memories
+                WHERE id IN ({placeholders})
+                """,
+                memory_ids,
+            ).fetchall()
+
+        return [
+            self._row_to_memory(row)
+            for row in rows
+        ]
