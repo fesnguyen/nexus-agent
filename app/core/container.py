@@ -9,6 +9,7 @@ from app.memory.configs.settings import (
     MEMORY_DB_PATH,
     FAISS_INDEX_PATH,
 )
+from app.memory.reranker import MemoryReranker
 
 
 class Container:
@@ -27,9 +28,14 @@ class Container:
             index_path=FAISS_INDEX_PATH,
         )
 
+        self.memory_reranker = (
+            MemoryReranker()
+        )
+
         self.memory_manager = MemoryManager(
             self.memory_store,
             self.faiss_store,
+            self.memory_reranker,
         )
 
         self.model: BaseLLM = ModelFactory.create(

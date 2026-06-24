@@ -1,4 +1,5 @@
 import json
+import re
 import sqlite3
 from datetime import UTC, datetime
 from pathlib import Path
@@ -324,15 +325,29 @@ class SQLiteMemoryStore(BaseMemoryStore):
             ),
         )
     
-    def _format_for_fts(self, user_input: str) -> str:
+    def _format_for_fts(
+        self,
+        user_input: str,
+    ) -> str:
         """
-        Add double quotes around the input string to ensure it is treated as a single token in FTS.
+        Remove FTS5 operators and special characters
+        while preserving searchable words.
         """
 
-        if not user_input or not user_input.strip():
+        if not user_input:
             return ""
-        escaped_input = user_input.replace('"', '""')
-        return f'"{escaped_input}"'
+
+        filter_text = re.sub(
+            r'[^a-zA-Z0-9\s]',
+            " ",
+            user_input,
+        ).strip()
+
+        # Split sentence into individual alphanumeric words
+        words = [w for w in filter_text.split() if w.isalnum()]
+        
+        # Joins them together: "Why OR FAISS OR is OR popular"
+        return " OR ".join(words)
     
     #===================================FAISS Store=========================================
     def get_next_faiss_id(

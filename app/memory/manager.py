@@ -1,5 +1,6 @@
 from app.memory.base import BaseMemoryStore
 from app.memory.faiss_store import FaissStore
+from app.memory.reranker import MemoryReranker
 
 
 class MemoryManager:
@@ -23,10 +24,12 @@ class MemoryManager:
         self,
         store: BaseMemoryStore,
         faiss_store: FaissStore,
+        reranker: MemoryReranker
     ) -> None:
 
         self.store = store
         self.faiss_store = faiss_store
+        self.reranker = reranker
 
     def retrieve_context(
         self,
@@ -62,6 +65,7 @@ class MemoryManager:
             )
         )
 
+        # Combine lexical and semantic memories, remove duplicates
         combined = {}
 
         for memory in lexical_memories:
@@ -73,11 +77,22 @@ class MemoryManager:
         if not combined:
             return ""
         
+        # Reanking
+        reranked = (
+            self.reranker.rerank(
+                query=query,
+                memories=list(
+                    combined.values()
+                ),
+                top_k=5,
+            )
+        )
+        
         lines = [
             "Relevant Memory:"
         ]
 
-        for memory in combined.values():
+        for memory in reranked:
             lines.append(
                 f"- {memory.content}"
             )
