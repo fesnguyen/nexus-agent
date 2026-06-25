@@ -1,6 +1,6 @@
 from app.memory.base import BaseMemoryStore
-from app.memory.faiss_store import FaissStore
-from app.memory.reranker import MemoryReranker
+from app.vectorstore.faiss_store import FaissStore
+from app.ranking.reranker import MemoryReranker
 
 
 class MemoryManager:

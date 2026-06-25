@@ -1,6 +1,6 @@
 from app.models.factory import ModelFactory
 from app.memory.extractor import MemoryExtractor
-from app.memory.faiss_store import FaissStore
+from app.vectorstore.faiss_store import FaissStore
 from app.memory.manager import MemoryManager
 from app.memory.sqlite_store import SQLiteMemoryStore
 from app.models.base import BaseLLM
