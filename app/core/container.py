@@ -9,7 +9,7 @@ from app.memory.configs.settings import (
     MEMORY_DB_PATH,
     FAISS_INDEX_PATH,
 )
-from app.memory.reranker import MemoryReranker
+from app.ranking.reranker import MemoryReranker
 
 
 class Container:
@@ -49,7 +49,5 @@ class Container:
         # future
 
         self.vector_store = None
-
-        self.memory_store = None
 
         self.session_store = None

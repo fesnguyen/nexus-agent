@@ -22,12 +22,12 @@ class MemoryManager:
 
     def __init__(
         self,
-        store: BaseMemoryStore,
+        memory_store: BaseMemoryStore,
         faiss_store: FaissStore,
         reranker: MemoryReranker
     ) -> None:
 
-        self.store = store
+        self.memory_store = memory_store
         self.faiss_store = faiss_store
         self.reranker = reranker
 
@@ -42,7 +42,7 @@ class MemoryManager:
         """
 
         # Lexical search
-        lexical_memories = self.store.search(
+        lexical_memories = self.memory_store.search(
             query=query,
             limit=limit,
         )
@@ -55,12 +55,12 @@ class MemoryManager:
 
         # Load semantic memories
         memory_ids = (
-            self.store.get_memory_ids_from_faiss(
+            self.memory_store.get_memory_ids_from_faiss(
                 faiss_ids
             )
         )
         semantic_memories = (
-            self.store.get_many(
+            self.memory_store.get_many(
                 memory_ids
             )
         )

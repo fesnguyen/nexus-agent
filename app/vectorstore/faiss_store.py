@@ -125,7 +125,13 @@ class FaissStore:
         self,
         items: list[tuple[int, str]],
     ) -> None:
+        """Add multiple items to faiss index.
 
+        Encode the content and add to index with their respective IDs.
+
+        Args:
+        items: list of tuple contain faiss id and pure memory content.
+        """
         if not items:
             return
 

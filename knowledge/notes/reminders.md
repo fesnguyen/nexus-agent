@@ -95,5 +95,10 @@ Please restructure your imports with 'import unsloth' at the top of your file. f
 ```
 * And it's truely slower, fixed by reorder ModelFactory to the top of container
 
-# Sentence Transformers position_ids Unexpected Key
+# Why choosing a mapping table in SQLite to map memory id to faiss id?
+* **FAISS IDs are Volatile**: If you delete an item from a FAISS index, the index often rebuilds or shifts its internal array. Index 42 today might become index 41 tomorrow. If your SQLite rows are hardcoded to faiss_id = 42, your database mapping instantly breaks. Using an independent Memory ID ensures your data relationships never corrupt when FAISS rearranges itself.
+* **Migration and Portability**: If you move to Qdrant or Chroma later, they do not use sequential FAISS integers (0, 1, 2). They use strings and UUIDs natively. If your whole SQLite schema depends on a faiss_id column, you have to rewrite your database structure. If you use a Memory ID column instead, you can swap FAISS for Qdrant without changing a single column name or query in SQLite.
+* **Multi-Index Support**: Real systems often use multiple FAISS indexes simultaneously (e.g., one for quick text snippets, one for long documents). If you map via a universal Memory ID, a single SQLite document row can easily link to multiple vectors across different files. Hardcoding a single faiss_id prevents this flexibility.
+
+# Sentence Transformers WARNING: position_ids Unexpected Key
 * Zero risk
