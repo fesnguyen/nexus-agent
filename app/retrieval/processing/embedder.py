@@ -35,7 +35,11 @@ class Embedder:
         Embedding dimension.
         """
 
-        return self._get_model().get_sentence_embedding_dimension()
+        return self._get_model().get_embedding_dimension()
+    
+    @property
+    def model_name(self) -> str:
+        return self._model_name
 
     def embed(
         self,
