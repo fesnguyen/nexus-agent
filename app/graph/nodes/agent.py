@@ -29,9 +29,9 @@ def agent_node(state: State):
     # Retrieval Context
     #
     retrieval_context = (
-        state.get(
-            "retrieval_context",
-            "",
+        container.retrieval_service
+        .retrieve(
+            query=user_query,
         )
     )
 

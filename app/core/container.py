@@ -1,5 +1,6 @@
 from app.models.factory import ModelFactory
 from app.memory.extractor import MemoryExtractor
+from app.retrieval.service import RAGService
 from app.vectorstore.faiss_store import FaissStore
 from app.memory.manager import MemoryManager
 from app.memory.sqlite_store import SQLiteMemoryStore
@@ -8,6 +9,10 @@ from app.tools.registry import ToolRegistry
 from app.memory.configs.settings import (
     MEMORY_DB_PATH,
     FAISS_INDEX_PATH,
+)
+from app.retrieval.configs.settings import (
+    KNOWLEDGE_DIR,
+    DATABASE,
 )
 from app.ranking.reranker import MemoryReranker
 
@@ -37,6 +42,13 @@ class Container:
             self.faiss_store,
             self.memory_reranker,
         )
+
+        self.retrieval_service = RAGService(
+            knowledge_dir=KNOWLEDGE_DIR,
+            database=DATABASE,
+        )
+
+        self.retrieval_service.initialize()
 
         self.model: BaseLLM = ModelFactory.create(
             "qwen",
