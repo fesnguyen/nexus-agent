@@ -119,7 +119,7 @@ class RAGService:
         self,
         query: str,
         k: int = 5,
-    ) -> list[SearchResult]:
+    ) -> str:
         """
         Retrieve the top-k relevant chunks.
         """
@@ -150,4 +150,4 @@ class RAGService:
                 )
             )
 
-        return results
+        return "\n\n".join(r.chunk.text for r in results)
