@@ -65,7 +65,7 @@ from typing import Any
 import faiss
 import numpy as np
 
-from sentence_transformers import SentenceTransformer
+from app.retrieval.processing.embedder import Embedder
 
 from app.retrieval.ingestion.loader import Loader
 from app.retrieval.processing.chunker import Chunker
@@ -129,9 +129,7 @@ class RAGService:
         chunk_size: int = 1500, # ~ 250 tokens
         chunk_overlap: int = 300, # ~ 50 tokens overlap at the end of each chunk
     ) -> None:
-
-        self._embedding_model_name = embedding_model
-
+        
         self._chunk_size = chunk_size
 
         self._chunk_overlap = chunk_overlap
@@ -140,8 +138,8 @@ class RAGService:
         # Components
         #
 
-        self._embedder = SentenceTransformer(
-            embedding_model
+        self._embedder = Embedder(
+            model_name=embedding_model,
         )
 
         #
@@ -205,28 +203,6 @@ class RAGService:
             f"[RAG] Generated {len(self._chunks)} chunk(s)."
         )
 
-
-    # =========================================================================
-    # Embedding
-    # =========================================================================
-
-    def _get_embedder(self) -> SentenceTransformer:
-        """
-        Lazily load the embedding model.
-
-        The model is only loaded when embeddings are actually needed.
-        This makes knowledge loading much faster.
-        """
-
-        if self._embedder is None:
-            print(f"[RAG] Loading embedding model: {self._embedding_model_name}")
-
-            self._embedder = SentenceTransformer(
-                self._embedding_model_name
-            )
-
-        return self._embedder
-
     def embed_chunks(self) -> None:
         """
         Generate embeddings for every chunk.
@@ -252,27 +228,13 @@ class RAGService:
             raise RuntimeError(
                 "Knowledge has not been loaded."
             )
-
-        embedder = self._get_embedder()
-
+        
         print(
             f"[RAG] Embedding {len(self._chunks)} chunk(s)..."
         )
 
-        texts = [
-            chunk.text
-            for chunk in self._chunks
-        ]
-
-        embeddings = embedder.encode(
-            texts,
-            convert_to_numpy=True,
-            normalize_embeddings=True,
-            show_progress_bar=True,
-        )
-
-        self._embeddings = embeddings.astype(
-            np.float32
+        self._embeddings = self._embedder.embed(
+            self._chunks
         )
 
         print(
@@ -323,29 +285,7 @@ class RAGService:
         print(
             f"[RAG] Indexed {self._index.ntotal} chunk(s)."
         )
-
-
-    def _embed_query(
-        self,
-        query: str,
-    ) -> np.ndarray:
-        """
-        Generate an embedding for a user query.
-        """
-
-        embedder = self._get_embedder()
-
-        embedding = embedder.encode(
-            query,
-            convert_to_numpy=True,
-            normalize_embeddings=True,
-        )
-
-        return embedding.astype(
-            np.float32
-        ).reshape(1, -1)
-
-
+        
     def retrieve(
         self,
         query: str,
@@ -366,7 +306,7 @@ class RAGService:
         # Multi-query generation, History-aware rewriting), 
         # =========================================================================
 
-        query_embedding = self._embed_query(
+        query_embedding = self._embedder.embed_query(
             query
         )
 
