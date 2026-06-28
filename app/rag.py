@@ -62,10 +62,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-import faiss
 import numpy as np
 
 from app.retrieval.processing.embedder import Embedder
+
+from app.retrieval.storage.faiss_store import FaissStore
 
 from app.retrieval.ingestion.loader import Loader
 from app.retrieval.processing.chunker import Chunker
@@ -146,7 +147,7 @@ class RAGService:
         # Runtime state
         #
 
-        self._index: faiss.Index | None = None
+        self._vector_store = FaissStore()
 
         self._embeddings: np.ndarray | None = None
 
@@ -264,28 +265,16 @@ class RAGService:
                 "Embeddings have not been generated."
             )
 
-        dimension = self._embeddings.shape[1]
+        print("[RAG] Building FAISS index...")
 
-        print(
-            f"[RAG] Building FAISS index ({dimension} dimensions)..."
-        )
-
-        #
-        # Since embeddings are already normalized,
-        # inner product == cosine similarity.
-        #
-        self._index = faiss.IndexFlatIP(
-            dimension
-        )
-
-        self._index.add(
+        self._vector_store.build(
             self._embeddings
         )
 
         print(
-            f"[RAG] Indexed {self._index.ntotal} chunk(s)."
+            f"[RAG] Indexed {self._vector_store.size} chunk(s)."
         )
-        
+
     def retrieve(
         self,
         query: str,
@@ -294,11 +283,6 @@ class RAGService:
         """
         Retrieve the k most relevant chunks.
         """
-
-        if self._index is None:
-            raise RuntimeError(
-                "Index has not been built."
-            )
         
         # =========================================================================
         # Query rewrite:
@@ -310,7 +294,7 @@ class RAGService:
             query
         )
 
-        scores, indices = self._index.search(
+        scores, indices = self._vector_store.search(
             query_embedding,
             k,
         )
