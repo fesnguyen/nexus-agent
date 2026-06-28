@@ -70,6 +70,7 @@ from app.retrieval.storage.faiss_store import FaissStore
 
 from app.retrieval.ingestion.loader import Loader
 from app.retrieval.processing.chunker import Chunker
+from app.retrieval.storage.chunk_store import ChunkStore
 
 
 # =============================================================================
@@ -135,10 +136,17 @@ class RAGService:
 
         self._chunk_overlap = chunk_overlap
 
+        from app.retrieval.storage.chunk_store import ChunkStore
+
+        CHUNK_DATABASE = VECTORSTORE_DIR / "chunks.db"
+
+        self._chunk_store = ChunkStore(
+            CHUNK_DATABASE
+        )
+
         #
         # Components
         #
-
         self._embedder = Embedder(
             model_name=embedding_model,
         )
@@ -146,7 +154,6 @@ class RAGService:
         #
         # Runtime state
         #
-
         self._vector_store = FaissStore()
 
         self._embeddings: np.ndarray | None = None
@@ -202,6 +209,18 @@ class RAGService:
 
         print(
             f"[RAG] Generated {len(self._chunks)} chunk(s)."
+        )
+
+        self._chunk_store.clear()
+
+        self._chunk_store.add_many(
+            self._chunks
+        )
+
+        stored_chunks = self._chunk_store.list()
+
+        print(
+            f"[RAG] Stored {len(stored_chunks)} chunk(s) in SQLite."
         )
 
     def embed_chunks(self) -> None:
