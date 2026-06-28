@@ -65,8 +65,10 @@ from typing import Any
 import faiss
 import numpy as np
 
-from langchain_text_splitters import RecursiveCharacterTextSplitter
 from sentence_transformers import SentenceTransformer
+
+from app.retrieval.ingestion.loader import Loader
+from app.retrieval.processing.chunker import Chunker
 
 
 # =============================================================================
@@ -89,34 +91,12 @@ VECTORSTORE_DIR.mkdir(
 # Internal Data Models
 # =============================================================================
 
-@dataclass(slots=True)
-class Chunk:
-    """
-    Represents one chunk of text.
-
-    Later this will become retrieval/schema.py.
-    """
-
-    id: str
-
-    source: Path
-
-    text: str
-
-    chunk_index: int
-
-
-@dataclass(slots=True)
-class SearchResult:
-    """
-    Retrieval result.
-
-    Returned by retrieve().
-    """
-
-    chunk: Chunk
-
-    score: float
+from app.retrieval.ingestion.parser import Parser
+from app.retrieval.schema import (
+    Chunk,
+    Document,
+    SearchResult
+)
 
 
 # =============================================================================
@@ -159,10 +139,6 @@ class RAGService:
         #
         # Components
         #
-        self._splitter = RecursiveCharacterTextSplitter(
-            chunk_size=chunk_size,
-            chunk_overlap=chunk_overlap,
-        )
 
         self._embedder = SentenceTransformer(
             embedding_model
@@ -171,11 +147,23 @@ class RAGService:
         #
         # Runtime state
         #
-        self._chunks: list[Chunk] = []
 
         self._index: faiss.Index | None = None
 
         self._embeddings: np.ndarray | None = None
+
+        self._loader = Loader(
+            knowledge_dir=KNOWLEDGE_DIR,
+            parser=Parser(),
+        )
+
+        self._chunker = Chunker(
+            chunk_size=chunk_size,
+            chunk_overlap=chunk_overlap,
+        )
+
+        self._documents: list[Document] = []
+        self._chunks: list[Chunk] = []
 
 
     # =========================================================================
@@ -184,76 +172,38 @@ class RAGService:
 
     def load_knowledge(self) -> None:
         """
-        Load every markdown file from the knowledge directory.
+        Load and chunk every supported document from the knowledge directory.
 
         Pipeline
         --------
         knowledge/
-              ↓
-        Read markdown files
-              ↓
-        Chunk each document
-              ↓
-        Store chunks in memory
-
-        This method does NOT generate embeddings.
+            ↓
+        Loader
+            ↓
+        Parser
+            ↓
+        Document
+            ↓
+        Chunker
+            ↓
+        Chunk
         """
 
-        self._chunks.clear()
+        print("[RAG] Loading knowledge...")
 
-        markdown_files = sorted(
-            KNOWLEDGE_DIR.rglob("*.md")
+        self._documents = self._loader.load()
+
+        self._chunks = self._chunker.chunk_documents(
+            self._documents
         )
 
-        if not markdown_files:
-            print("[RAG] No markdown files found.")
-            return
-
-        print(f"[RAG] Loading {len(markdown_files)} markdown file(s)...")
-
-        for path in markdown_files:
-            self._load_markdown_file(path)
-
-        print(f"[RAG] Loaded {len(self._chunks)} chunk(s).")
-
-    def _load_markdown_file(
-        self,
-        path: Path,
-    ) -> None:
-        """
-        Read a single markdown file and split it into chunks.
-        """
-
-        text = path.read_text(
-            encoding="utf-8"
+        print(
+            f"[RAG] Loaded {len(self._documents)} document(s)."
         )
 
-        pieces = self._splitter.split_text(text)
-
-        self._build_chunks(
-            source=path,
-            pieces=pieces,
+        print(
+            f"[RAG] Generated {len(self._chunks)} chunk(s)."
         )
-
-    def _build_chunks(
-        self,
-        source: Path,
-        pieces: list[str],
-    ) -> None:
-        """
-        Convert text pieces into Chunk objects.
-        """
-
-        for index, text in enumerate(pieces):
-
-            chunk = Chunk(
-                id=f"{source.stem}_{index}",
-                source=source,
-                text=text,
-                chunk_index=index,
-            )
-
-            self._chunks.append(chunk)
 
 
     # =========================================================================
