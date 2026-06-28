@@ -72,6 +72,7 @@ from app.retrieval.ingestion.loader import Loader
 from app.retrieval.processing.chunker import Chunker
 from app.retrieval.storage.chunk_store import ChunkStore
 from app.retrieval.storage.file_index_store import FileIndexStore, IndexedFile
+from app.retrieval.storage.mapping_store import MappingStore, VectorMapping
 
 
 # =============================================================================
@@ -137,12 +138,18 @@ class RAGService:
 
         self._chunk_overlap = chunk_overlap
 
-        CHUNK_DATABASE = VECTORSTORE_DIR / "chunks.db"
-
-        FILE_INDEX_DATABASE = VECTORSTORE_DIR / "file_index.db"
+        RETRIEVAL_DATABASE = VECTORSTORE_DIR / "retrieval.db"
 
         self._chunk_store = ChunkStore(
-            CHUNK_DATABASE
+            RETRIEVAL_DATABASE
+        )
+
+        self._file_index_store = FileIndexStore(
+            RETRIEVAL_DATABASE,
+        )
+
+        self._mapping_store = MappingStore(
+            RETRIEVAL_DATABASE
         )
 
         #
@@ -156,9 +163,7 @@ class RAGService:
         # Runtime state
         #
         self._vector_store = FaissStore()
-        self._file_index_store = FileIndexStore(
-            FILE_INDEX_DATABASE,
-        )
+        
 
         self._embeddings: np.ndarray | None = None
 
@@ -252,6 +257,47 @@ class RAGService:
             )
 
             print(indexed)
+        
+        print("[TEST] MappingStore")
+
+        self._mapping_store.clear()
+
+        for vector_id, chunk in enumerate(self._chunks):
+
+            mapping = VectorMapping(
+                chunk_id=chunk.id,
+                vector_store="faiss",
+                embedding_model="BAAI/bge-small-en-v1.5",
+                vector_id=vector_id,
+            )
+
+            self._mapping_store.add(mapping)
+
+        print(
+            f"Inserted {len(self._chunks)} mapping(s)."
+        )
+
+        first_chunk = self._chunks[0]
+
+        mapping = self._mapping_store.get_by_chunk(
+            first_chunk.id
+        )
+
+        print()
+
+        print("Lookup by chunk id:")
+
+        print(mapping)
+
+        mapping = self._mapping_store.get_by_vector(
+            0
+        )
+
+        print()
+
+        print("Lookup by vector id:")
+
+        print(mapping)
 
     def embed_chunks(self) -> None:
         """
