@@ -71,6 +71,7 @@ from app.retrieval.storage.faiss_store import FaissStore
 from app.retrieval.ingestion.loader import Loader
 from app.retrieval.processing.chunker import Chunker
 from app.retrieval.storage.chunk_store import ChunkStore
+from app.retrieval.storage.file_index_store import FileIndexStore, IndexedFile
 
 
 # =============================================================================
@@ -136,9 +137,9 @@ class RAGService:
 
         self._chunk_overlap = chunk_overlap
 
-        from app.retrieval.storage.chunk_store import ChunkStore
-
         CHUNK_DATABASE = VECTORSTORE_DIR / "chunks.db"
+
+        FILE_INDEX_DATABASE = VECTORSTORE_DIR / "file_index.db"
 
         self._chunk_store = ChunkStore(
             CHUNK_DATABASE
@@ -155,6 +156,9 @@ class RAGService:
         # Runtime state
         #
         self._vector_store = FaissStore()
+        self._file_index_store = FileIndexStore(
+            FILE_INDEX_DATABASE,
+        )
 
         self._embeddings: np.ndarray | None = None
 
@@ -222,6 +226,32 @@ class RAGService:
         print(
             f"[RAG] Stored {len(stored_chunks)} chunk(s) in SQLite."
         )
+
+        # Test file_index_store
+        self._file_index_store.clear()
+
+        for document in self._documents:
+
+            indexed_file = IndexedFile(
+                source=document.source,
+                content_hash=FileIndexStore.compute_hash(
+                    document.source
+                ),
+                embedding_model="BAAI/bge-small-en-v1.5",
+                chunk_count = sum(
+                    chunk.source == document.source
+                    for chunk in self._chunks
+                ),
+            )
+
+            self._file_index_store.add(indexed_file)
+
+        for document in self._documents:
+            indexed = self._file_index_store.get(
+                document.source
+            )
+
+            print(indexed)
 
     def embed_chunks(self) -> None:
         """
