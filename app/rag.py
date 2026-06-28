@@ -146,8 +146,8 @@ class RAGService:
     def __init__(
         self,
         embedding_model: str = "BAAI/bge-small-en-v1.5",
-        chunk_size: int = 1000,
-        chunk_overlap: int = 200,
+        chunk_size: int = 1500, # ~ 250 tokens
+        chunk_overlap: int = 300, # ~ 50 tokens overlap at the end of each chunk
     ) -> None:
 
         self._embedding_model_name = embedding_model
@@ -409,6 +409,12 @@ class RAGService:
             raise RuntimeError(
                 "Index has not been built."
             )
+        
+        # =========================================================================
+        # Query rewrite:
+        # LLM rewrite, HyDE (Hypothetical Document Embeddings, 
+        # Multi-query generation, History-aware rewriting), 
+        # =========================================================================
 
         query_embedding = self._embed_query(
             query
@@ -435,11 +441,26 @@ class RAGService:
                 )
             )
 
+        # =========================================================================
+        # Hybrid Retrieval:
+        # bm25 + Faiss
+        # =========================================================================
+
+        # =========================================================================
+        # Re-ranker:
+        # Select 20 chunks -> rerank
+        # =========================================================================
+
         return results
 
 
 
 if __name__ == "__main__":
+
+    # =========================================================================
+    # Incremental Indexing ⭐⭐⭐:
+    # File changed -> rebuild that file only
+    # =========================================================================
 
     rag = RAGService()
 
@@ -447,13 +468,43 @@ if __name__ == "__main__":
 
     rag.embed_chunks()
 
+    # =========================================================================
+    # Multi-source Retrieval ⭐⭐⭐:
+    # Retrievel from multiple sources
+    # =========================================================================
+
     rag.build_index()
 
     print()
 
+    # =========================================================================
+    # Metadata Filtering:
+    # Handle large number of files, reduce noise
+    # =========================================================================
+
+    # =========================================================================
+    # Parent Document Retrieval:
+    # Retrieve nearby chunks (Intuitively, and proofully a MUST)
+    # =========================================================================
+
+    # =========================================================================
+    # Multi-Vector Retrieval ⭐⭐:
+    # embed title, heading, body, summary
+    # =========================================================================
+
+    # =========================================================================
+    # Caching ⭐⭐⭐:
+    # Cache query embedding and retrieval result
+    # =========================================================================
+
     results = rag.retrieve(
-        "What is LangGraph?"
+        "How to finetune large language model using Unsloth?"
     )
+
+    # =========================================================================
+    # Context compression:
+    # 1000 to 80 tokens is ideal :D
+    # =========================================================================
 
     for result in results:
 
