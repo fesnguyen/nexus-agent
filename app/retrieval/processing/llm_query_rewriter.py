@@ -1,0 +1,118 @@
+"""
+LLM query rewriter.
+
+Responsibilities
+----------------
+Rewrite user queries into standalone retrieval queries.
+
+This implementation uses an LLM to understand
+conversation context and improve retrieval quality.
+"""
+
+from __future__ import annotations
+
+from app.models.base import BaseModel
+from app.retrieval.processing.base_query_rewriter import (
+    BaseQueryRewriter,
+)
+from langchain_core.messages import (
+    SystemMessage
+)
+from pydantic import BaseModel
+
+from app.tools.registry import ToolRegistry
+
+
+SYSTEM_PROMPT = """
+You are a query rewriting assistant.
+
+Your task is to rewrite the user's latest query into a
+standalone search query for Retrieval-Augmented Generation (RAG).
+
+Always return valid JSON.
+
+Schema:
+
+{
+  "rewritten_query": string,
+}
+
+Rules
+-----
+- Preserve the user's original intent.
+- Expand pronouns using the conversation history.
+- Keep important keywords.
+- Remove conversational filler.
+- Do NOT answer the question.
+- Do NOT invent information.
+- Output JSON only.
+""".strip()
+
+class RewrittenQuery(BaseModel):
+    rewritten_query: str
+
+class LLMQueryRewriter(BaseQueryRewriter):
+    """
+    Rewrite retrieval queries using an LLM.
+    """
+
+    def __init__(
+        self,
+        model: BaseModel,
+    ) -> None:
+
+        self._model = model
+
+    def rewrite(
+        self,
+        query: str,
+        history: list[str] | None = None,
+    ) -> str:
+        """
+        Rewrite a user query into a standalone retrieval query.
+        """
+
+        history = history or []
+
+        system_prompt = self._build_prompt(
+            query=query,
+            history=history,
+        )
+
+        result = self._model.invoke(
+            messages=[
+                SystemMessage(
+                    content=system_prompt
+                ),
+            ],
+            tool=ToolRegistry(),
+            response_model=RewrittenQuery,
+        )
+
+        print("Query has been rewritten!, ", result.rewritten_query)
+        return result.rewritten_query
+
+    def _build_prompt(
+        self,
+        query: str,
+        history: list[str],
+    ) -> str:
+        """
+        Build the prompt for the LLM.
+        """
+
+        conversation = "\n".join(history)
+
+        return f"""
+{SYSTEM_PROMPT}
+Conversation History
+--------------------
+{conversation}
+
+Latest User Query
+-----------------
+{query}
+
+Rewrite the latest user query into a standalone retrieval query.
+Only output the rewritten query as JSON.
+""".strip()

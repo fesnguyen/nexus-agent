@@ -28,10 +28,15 @@ def agent_node(state: State):
     #
     # Retrieval Context
     #
+    history = [m.content 
+               for m in state["messages"] 
+               if isinstance(m, HumanMessage)]
+    
     retrieval_context = (
         container.retrieval_service
         .retrieve(
             query=user_query,
+            history=history
         )
     )
 

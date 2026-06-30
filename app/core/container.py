@@ -1,11 +1,13 @@
 from app.models.factory import ModelFactory
 from app.memory.extractor import MemoryExtractor
+from app.retrieval.processing.llm_query_rewriter import LLMQueryRewriter
 from app.retrieval.service import RAGService
 from app.vectorstore.faiss_store import FaissStore
 from app.memory.manager import MemoryManager
 from app.memory.sqlite_store import SQLiteMemoryStore
 from app.models.base import BaseLLM
 from app.tools.registry import ToolRegistry
+from app.retrieval.processing.heuristic_query_rewriter import HeuristicQueryRewriter
 from app.memory.configs.settings import (
     MEMORY_DB_PATH,
     FAISS_INDEX_PATH,
@@ -43,13 +45,6 @@ class Container:
             self.memory_reranker,
         )
 
-        self.retrieval_service = RAGService(
-            knowledge_dir=KNOWLEDGE_DIR,
-            database=DATABASE,
-        )
-
-        self.retrieval_service.initialize()
-
         self.model: BaseLLM = ModelFactory.create(
             "qwen",
             "unsloth/Qwen3-4B-Instruct-2507-bnb-4bit",
@@ -57,6 +52,17 @@ class Container:
         )
 
         self.memory_extractor = MemoryExtractor(self.model)
+
+        # self.heuristic_query_rewriter = HeuristicQueryRewriter()
+        self.llm_query_rewriter = LLMQueryRewriter(self.model)
+
+        self.retrieval_service = RAGService(
+            knowledge_dir=KNOWLEDGE_DIR,
+            database=DATABASE,
+            query_rewriter=self.llm_query_rewriter
+        )
+
+        self.retrieval_service.initialize()
 
         # future
 

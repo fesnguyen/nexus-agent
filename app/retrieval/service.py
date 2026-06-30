@@ -25,6 +25,7 @@ from pathlib import Path
 from app.retrieval.index_manager import IndexManager
 from app.retrieval.ingestion.loader import Loader
 from app.retrieval.ingestion.parser import Parser
+from app.retrieval.processing.base_query_rewriter import BaseQueryRewriter
 from app.retrieval.processing.chunker import Chunker
 from app.retrieval.processing.embedder import Embedder
 from app.retrieval.schema import Chunk, Document, SearchResult
@@ -43,6 +44,7 @@ class RAGService:
         self,
         knowledge_dir: Path,
         database: Path,
+        query_rewriter: BaseQueryRewriter,
         embedding_model: str = "BAAI/bge-small-en-v1.5",
         chunk_size: int = 1500,
         chunk_overlap: int = 300,
@@ -92,6 +94,8 @@ class RAGService:
             vector_store=self._vector_store,
         )
 
+        self.query_rewriter = query_rewriter
+
         #
         # Runtime cache
         #
@@ -119,13 +123,16 @@ class RAGService:
         self,
         query: str,
         k: int = 5,
+        history: list[str] | None = None,
     ) -> str:
         """
         Retrieve the top-k relevant chunks.
         """
 
+        rewrited_query = self.query_rewriter.rewrite(query)
+
         query_embedding = self._embedder.embed_query(
-            query
+            rewrited_query
         )
 
         scores, indices = self._vector_store.search(
