@@ -44,13 +44,20 @@ class RAGService:
     def __init__(
         self,
         knowledge_dir: Path,
-        database: Path,
+        db_path: Path,
         query_rewriter: BaseQueryRewriter,
         context_compressor: BaseContextCompressor,
         embedding_model: str = "BAAI/bge-small-en-v1.5",
         chunk_size: int = 1500,
         chunk_overlap: int = 300,
     ) -> None:
+        
+        # Initialize
+        self.db_path = db_path
+        self.db_path.parent.mkdir(
+            parents=True,
+            exist_ok=True,
+        )
 
         #
         # Processing
@@ -74,11 +81,11 @@ class RAGService:
         # Storage
         #
 
-        self._chunk_store = ChunkStore(database)
+        self._chunk_store = ChunkStore(db_path)
 
-        self._file_index_store = FileIndexStore(database)
+        self._file_index_store = FileIndexStore(db_path)
 
-        self._mapping_store = MappingStore(database)
+        self._mapping_store = MappingStore(db_path)
 
         self._vector_store = FaissStore()
 

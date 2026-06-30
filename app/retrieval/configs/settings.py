@@ -7,9 +7,9 @@ KNOWLEDGE_DIR = (
     / "knowledge"
 )
 
-DATABASE = (
+RETRIEVAL_DB_PATH = (
     PROJECT_ROOT
-    / "app"
-    / "vectorstore"
+    / "data"
+    / "retrieval"
     / "retrieval.db"
 )

@@ -1,6 +1,6 @@
 from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
 
 MEMORY_DB_PATH = (
     PROJECT_ROOT
@@ -12,6 +12,6 @@ MEMORY_DB_PATH = (
 FAISS_INDEX_PATH = (
     PROJECT_ROOT
     / "data"
-    / "faiss"
+    / "memory"
     / "memory.index"
 )

@@ -1,5 +1,5 @@
 from app.memory.base import BaseMemoryStore
-from app.vectorstore.faiss_store import FaissStore
+from app.memory.memory_faiss_store import MemoryFaissStore
 from app.ranking.reranker import MemoryReranker
 
 
@@ -23,7 +23,7 @@ class MemoryManager:
     def __init__(
         self,
         memory_store: BaseMemoryStore,
-        faiss_store: FaissStore,
+        faiss_store: MemoryFaissStore,
         reranker: MemoryReranker
     ) -> None:
 

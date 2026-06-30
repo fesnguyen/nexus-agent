@@ -59,8 +59,8 @@ class EmbeddingContextCompressor(BaseContextCompressor):
 
         sentences: list[str] = []
 
+        # Segment the retrieved text chunk into individual sentences
         for result in results:
-
             sentences.extend(
                 self._split_sentences(
                     result.chunk.text
@@ -70,27 +70,32 @@ class EmbeddingContextCompressor(BaseContextCompressor):
         if not sentences:
             return ""
 
+        # Compute normalized vector embeddings for all extracted sentences
         sentence_embeddings = self._embedder.encode(
             sentences,
             convert_to_numpy=True,
             normalize_embeddings=True,
         )
 
+        # Compute a normalized vector embedding for the user's query
         query_embedding = self._embedder.encode(
             query,
             convert_to_numpy=True,
             normalize_embeddings=True,
         )
 
+        # Calculate cosine similarity scores via dot product of normalized vectors
         scores = np.dot(
             sentence_embeddings,
             query_embedding,
         )
 
+        # Get the indices of the top-K highest scoring sentences
         indices = np.argsort(
             scores
         )[::-1][: self._top_k_sentences]
 
+        # Sort selected indices to preserve the sentences' original narrative order
         selected = [
             sentences[i]
             for i in sorted(indices)

@@ -5,7 +5,7 @@ import numpy as np
 from sentence_transformers import SentenceTransformer
 
 
-class FaissStore:
+class MemoryFaissStore:
     """
     Semantic memory index.
 
@@ -20,11 +20,11 @@ class FaissStore:
 
     def __init__(
         self,
-        index_path: str,
+        index_path: Path,
         model_name: str = "intfloat/multilingual-e5-base", # Support multiple languages
     ) -> None:
 
-        self.index_path = Path(index_path)
+        self.index_path = index_path
 
         self.encoder = SentenceTransformer(
             model_name

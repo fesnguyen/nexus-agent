@@ -3,19 +3,20 @@ from app.memory.extractor import MemoryExtractor
 from app.retrieval.processing.embedding_context_compressor import EmbeddingContextCompressor
 from app.retrieval.processing.llm_query_rewriter import LLMQueryRewriter
 from app.retrieval.service import RAGService
-from app.vectorstore.faiss_store import FaissStore
+from app.memory.memory_faiss_store import MemoryFaissStore
 from app.memory.manager import MemoryManager
 from app.memory.sqlite_store import SQLiteMemoryStore
 from app.models.base import BaseLLM
 from app.tools.registry import ToolRegistry
-from app.retrieval.processing.heuristic_query_rewriter import HeuristicQueryRewriter
+# from app.retrieval.processing.heuristic_query_rewriter import HeuristicQueryRewriter
+
 from app.memory.configs.settings import (
     MEMORY_DB_PATH,
     FAISS_INDEX_PATH,
 )
 from app.retrieval.configs.settings import (
     KNOWLEDGE_DIR,
-    DATABASE,
+    RETRIEVAL_DB_PATH,
 )
 from app.ranking.reranker import MemoryReranker
 
@@ -32,7 +33,7 @@ class Container:
             db_path=MEMORY_DB_PATH
         )
 
-        self.faiss_store = FaissStore(
+        self.faiss_store = MemoryFaissStore(
             index_path=FAISS_INDEX_PATH,
         )
 
@@ -61,7 +62,7 @@ class Container:
 
         self.retrieval_service = RAGService(
             knowledge_dir=KNOWLEDGE_DIR,
-            database=DATABASE,
+            db_path=RETRIEVAL_DB_PATH,
             query_rewriter=self.llm_query_rewriter,
             context_compressor = self.context_compressor,
         )

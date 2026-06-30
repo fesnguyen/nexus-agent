@@ -29,10 +29,10 @@ class SQLiteMemoryStore(BaseMemoryStore):
 
     def __init__(
         self,
-        db_path: str,
+        db_path: Path,
     ) -> None:
 
-        self.db_path = Path(db_path)
+        self.db_path = db_path
 
         self.db_path.parent.mkdir(
             parents=True,

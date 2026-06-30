@@ -12,7 +12,7 @@ def main() -> None:
 
     rag = RAGService(
         knowledge_dir=KNOWLEDGE_DIR,
-        database=DATABASE,
+        db_path=DATABASE,
     )
 
     rag.initialize()
