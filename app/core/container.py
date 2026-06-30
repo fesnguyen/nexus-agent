@@ -1,5 +1,6 @@
 from app.models.factory import ModelFactory
 from app.memory.extractor import MemoryExtractor
+from app.retrieval.processing.embedding_context_compressor import EmbeddingContextCompressor
 from app.retrieval.processing.llm_query_rewriter import LLMQueryRewriter
 from app.retrieval.service import RAGService
 from app.vectorstore.faiss_store import FaissStore
@@ -56,10 +57,13 @@ class Container:
         # self.heuristic_query_rewriter = HeuristicQueryRewriter()
         self.llm_query_rewriter = LLMQueryRewriter(self.model)
 
+        self.context_compressor = EmbeddingContextCompressor()
+
         self.retrieval_service = RAGService(
             knowledge_dir=KNOWLEDGE_DIR,
             database=DATABASE,
-            query_rewriter=self.llm_query_rewriter
+            query_rewriter=self.llm_query_rewriter,
+            context_compressor = self.context_compressor,
         )
 
         self.retrieval_service.initialize()

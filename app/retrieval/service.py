@@ -25,6 +25,7 @@ from pathlib import Path
 from app.retrieval.index_manager import IndexManager
 from app.retrieval.ingestion.loader import Loader
 from app.retrieval.ingestion.parser import Parser
+from app.retrieval.processing.base_context_compressor import BaseContextCompressor
 from app.retrieval.processing.base_query_rewriter import BaseQueryRewriter
 from app.retrieval.processing.chunker import Chunker
 from app.retrieval.processing.embedder import Embedder
@@ -45,6 +46,7 @@ class RAGService:
         knowledge_dir: Path,
         database: Path,
         query_rewriter: BaseQueryRewriter,
+        context_compressor: BaseContextCompressor,
         embedding_model: str = "BAAI/bge-small-en-v1.5",
         chunk_size: int = 1500,
         chunk_overlap: int = 300,
@@ -95,6 +97,8 @@ class RAGService:
         )
 
         self.query_rewriter = query_rewriter
+
+        self.context_compressor = context_compressor
 
         #
         # Runtime cache
@@ -157,4 +161,8 @@ class RAGService:
                 )
             )
 
-        return "\n\n".join(r.chunk.text for r in results)
+        # Context compression
+        compressed_result = self.context_compressor.compress(query, results)
+        print(f"Context has been compressed: {compressed_result}")
+
+        return compressed_result
