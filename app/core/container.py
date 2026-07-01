@@ -2,7 +2,7 @@ from app.models.factory import ModelFactory
 from app.memory.extractor import MemoryExtractor
 from app.retrieval.processing.embedding_context_compressor import EmbeddingContextCompressor
 from app.retrieval.processing.llm_query_rewriter import LLMQueryRewriter
-from app.retrieval.service import RAGService
+from app.retrieval.rag_service import RAGService
 from app.memory.memory_faiss_store import MemoryFaissStore
 from app.memory.manager import MemoryManager
 from app.memory.sqlite_store import SQLiteMemoryStore
@@ -23,7 +23,8 @@ from app.ranking.reranker import MemoryReranker
 
 class Container:
 
-    def __init__(self) -> None:
+    def initialize(self):
+        print("Container initialization start")
 
         self.tool_registry = ToolRegistry(
             register_all_available=True
@@ -41,6 +42,7 @@ class Container:
             MemoryReranker()
         )
 
+        print("memory manager init")
         self.memory_manager = MemoryManager(
             self.memory_store,
             self.faiss_store,

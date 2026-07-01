@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from app.retrieval.service import RAGService
+from app.retrieval.rag_service import RAGService
 
 
 KNOWLEDGE_DIR = Path("knowledge")
