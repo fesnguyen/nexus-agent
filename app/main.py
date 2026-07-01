@@ -1,9 +1,9 @@
 from langchain_core.messages import HumanMessage
 
-from app.graph.workflow import build_graph
+from app.graph.workflow import build_workflow
 
 
-graph = build_graph()
+graph = build_workflow()
 
 result = graph.invoke(
     {

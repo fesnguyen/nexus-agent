@@ -1,44 +1,13 @@
-"""
-Nexus Backend
-
-Single-file backend.
-
-Architecture
-------------
-Browser
-    │
-HTTP / WebSocket
-    │
-FastAPI
-    │
-Application
-    │
-Agent
-    │
-RAG
-    │
-Memory
-    │
-Tools
-    │
-Local LLM
-"""
-
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
-import tempfile
-import os
-
-# Force Unsloth to build its temporary files inside the system temp directory
-os.environ["UNSLOTH_CACHE_DIR"] = os.path.join(tempfile.gettempdir(), "unsloth_compiled_cache")
-
 from app.core.app import container
-from app.graph.workflow import build_graph
+from app.graph.workflow import build_workflow
 from langchain_core.messages import HumanMessage
+from app.api.chat import router as chat_router
 
 # ============================================================
 # Application Lifecycle
@@ -60,7 +29,7 @@ async def lifespan(app: FastAPI):
 
     print("Container initialize success!")
 
-    app.state.workflow = build_graph()
+    app.state.workflow = build_workflow()
 
     #
     # TODO:
@@ -87,6 +56,8 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan,
 )
+
+app.include_router(chat_router)
 
 # ============================================================
 # Routes

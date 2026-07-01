@@ -24,7 +24,7 @@ def route_agent(state):
     return "finish"
 
 
-def build_graph():
+def build_workflow():
 
     graph = StateGraph(State)
 
