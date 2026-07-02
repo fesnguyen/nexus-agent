@@ -1,13 +1,15 @@
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
+import os
 
 from fastapi import FastAPI
 
 from app.core.app import container
 from app.graph.workflow import build_workflow
 from langchain_core.messages import HumanMessage
-from app.api.chat import router as chat_router
+from app.api.routes.chat import router as chat_router
+from fastapi.middleware.cors import CORSMiddleware
 
 # ============================================================
 # Application Lifecycle
@@ -55,6 +57,29 @@ app = FastAPI(
     description="Local AI Agent",
     version="1.0.0",
     lifespan=lifespan,
+)
+
+# 1. Define allowed origins based on your environment
+ENV = os.getenv("APP_ENV", "development")
+
+if ENV == "production":
+    allowed_origins = [
+        # "https://www.your-app-domain.com",
+        # "https://your-app-domain.com"
+    ]
+else:
+    allowed_origins = [
+        "http://localhost:5173",  # Vite default port
+        "http://127.0.0.1:5173"
+    ]
+
+# 2. Apply the middleware safely
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=allowed_origins, 
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "OPTIONS", "DELETE", "PUT"], # Explicitly list methods instead of "*"
+    allow_headers=["Content-Type", "Authorization"],           # Explicitly list accepted headers
 )
 
 app.include_router(chat_router)

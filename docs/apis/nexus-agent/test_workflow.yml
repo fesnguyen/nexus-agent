@@ -1,10 +1,17 @@
 info:
   name: test_workflow
   type: http
+  seq: 1
 
 http:
-  method: GET
-  url: 127.0.0.1:8000/test
+  method: POST
+  url: 127.0.0.1:8000/chat
+  body:
+    type: multipart-form
+    data:
+      - name: message
+        type: text
+        value: Hello nexus
   auth: inherit
 
 settings:

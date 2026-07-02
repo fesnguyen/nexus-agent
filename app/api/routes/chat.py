@@ -8,6 +8,8 @@ from fastapi import APIRouter, Request, UploadFile, File, Form
 from langchain_core.messages import HumanMessage
 from PIL import Image
 
+from app.api.schemas.chat import ChatRequest, ChatResponse
+
 
 router = APIRouter(
     prefix="/chat",
@@ -17,31 +19,30 @@ router = APIRouter(
 @router.post("")
 async def chat(
     request: Request,
-    message: str = Form(...),
-    image: UploadFile | None = File(default=None),
-):
+    payload: ChatRequest,
+) -> ChatResponse:
     """
     Chat with Nexus.
     """
 
+    message = payload.messages[-1]
+
     workflow = request.app.state.workflow
 
-    images = []
-
-    if image is not None:
-        images.append(Image.open(image.file))
+    # Multimodal model later
+    # images = []
+    # if image is not None:
+    #     images.append(Image.open(image.file))
 
     state = {
         "messages": [
             HumanMessage(
-                content=message,
+                content=message.content,
             )
         ],
-        "images": images,
+        "images": None,
     }
 
     result = workflow.invoke(state)
 
-    return {
-        "response": result["response"],
-    }
+    return ChatResponse(content=result['messages'][-1].content)

@@ -1,15 +1,16 @@
 # nexus-agent
 Agentic RAG assistant powered by local LLMs.
 
-# ERROR: 
-## WARNING:  WatchFiles detected changes in 'unsloth_compiled_cache/moe_utils.py'. Reloading...
-* Solution: 
-  + Best:
-    ```
-    uvicorn.run(
-      ...
-      reload=True,
-      reload_excludes=["unsloth_compiled_cache/*"],
-    )
-    ```
-  + Run: uvicorn main:app --reload --reload-exclude "unsloth_compiled_cache/*"
+# Start
+```
+# Start API (wrapper with assumed preset names / base which specific names)
+fastapi dev / uvicorn main:app reload
+
+fastapi run / uvicorn main:app --host 0.0.0.0 --port 8000
+
+Note: left / right have same meaning, can pass same arguments like --reload-exclude "unsloth_compiled_cache/*"
+
+# Start UI
+npm install
+npm run dev
+```
