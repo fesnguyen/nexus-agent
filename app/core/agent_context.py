@@ -1,3 +1,5 @@
+from app.memory.conversation_service import ConversationService
+from app.memory.conversation_store import ConversationStore
 from app.models.factory import ModelFactory
 from app.memory.extractor import MemoryExtractor
 from app.retrieval.processing.embedding_context_compressor import EmbeddingContextCompressor
@@ -21,10 +23,22 @@ from app.retrieval.configs.settings import (
 from app.ranking.reranker import MemoryReranker
 
 
-class Container:
+class AgentContext:
 
     def initialize(self):
         print("Container initialization start")
+
+        # ---------------------------------------------------------
+        # Conversation
+        # ---------------------------------------------------------
+
+        self.conversation_store = ConversationStore(
+            db_path="data/conversations.db",
+        )
+
+        self.conversation_service = ConversationService(
+            store=self.conversation_store,
+        )
 
         self.tool_registry = ToolRegistry(
             register_all_available=True
@@ -70,9 +84,3 @@ class Container:
         )
 
         self.retrieval_service.initialize()
-
-        # future
-
-        self.vector_store = None
-
-        self.session_store = None

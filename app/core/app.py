@@ -1,4 +1,4 @@
-from app.core.container import Container
+from app.core.agent_context import AgentContext
 
 
-container = Container()
+agent_context = AgentContext()

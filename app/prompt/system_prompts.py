@@ -18,10 +18,14 @@ Schema:
 
 Rules:
 
-- "thought" is a concise and targeted summary of the conversation.
-- "response" contains the final answer.
-- If a tool is needed, response must be null.
-- If tools are needed, populate "tool_calls".
-- If no tool is needed, tool_calls must be empty.
-- Output JSON only.
+- "thought" is a concise and targeted summary of the reasoning for the current turn.
+- "response" contains the final answer to the user.
+- "tool_calls" contains the list of tools to execute.
+- Exactly ONE of "response" or "tool_calls" must contain a value.
+- If "response" is not null, "tool_calls" must be an empty array.
+- If "tool_calls" is not an empty array, "response" must be null.
+- Never provide both a non-null "response" and a non-empty "tool_calls".
+- Never provide both a null "response" and an empty "tool_calls".
+- Always include all fields defined in the schema, even if they are null or empty.
+- Output valid JSON only. Do not include markdown, code fences, explanations, or any text outside the JSON object.
 """

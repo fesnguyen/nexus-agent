@@ -1,118 +1,48 @@
-from app.core.app import container
+from app.core.app import agent_context
 from app.graph.state import State
+from app.graph.workers.agent_worker import (
+    build_response_state,
+    build_system_prompt,
+    build_tool_state,
+    get_user_query,
+    invoke_model,
+    persist_assistant_response,
+    retrieve_memory,
+    retrieve_rag,
+)
 from app.prompt.system_prompts import SYSTEM_PROMPT
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 
 def agent_node(state: State):
+    """
+    This is the brain of the workflow:
+    + Invoke model
+    + Retrieve and attach memory/RAG
+    + Build system prompt
+    + Lead to tool/response
+    """
 
-    #
-    # Latest user query
-    #
-    user_query = ""
+    # Get user query for this run
+    user_query = get_user_query(state)
 
-    for message in reversed(state["messages"]):
+    # Retrieve context base on lastest message
+    memory_context = retrieve_memory(user_query)
 
-        if isinstance(message, HumanMessage):
+    # Retrieval rag context as a service, not a tool
+    retrieval_context = retrieve_rag(state, user_query)
 
-            user_query = message.content
-
-            break
-
-    memory_context = (
-        container.memory_manager
-        .retrieve_context(
-            query=user_query
-        )
-    )
-
-    #
-    # Retrieval Context
-    #
-    history = [m.content 
-               for m in state["messages"] 
-               if isinstance(m, HumanMessage)]
-    
-    retrieval_context = (
-        container.retrieval_service
-        .retrieve(
-            query=user_query,
-            history=history
-        )
-    )
-
-    #
-    # Build Context
-    #
-    context_parts = []
-
-    if memory_context:
-
-        context_parts.append(
-            memory_context
-        )
-
-    if retrieval_context:
-
-        context_parts.append(
-            retrieval_context
-        )
-
-    context = "\n\n".join(
-        context_parts
-    )
-
-    #
     # System Prompt
-    #
-    system_prompt = SYSTEM_PROMPT
+    system_prompt = build_system_prompt(memory_context, retrieval_context)
 
-    if context:
-
-        system_prompt += (
-            "\n\n"
-            "Additional Context:\n"
-            f"{context}"
-        )
-
-
-    #
     # Invoke Model
-    #
-    decision = container.model.invoke(
-        messages=[
-            # Always put System Message to the top of the conversation
-            SystemMessage(
-                content=system_prompt,
-            ),
-            *state["messages"],
-        ],
-        tool=container.tool_registry,
-    )
+    decision = invoke_model(state, system_prompt)
 
-    #
-    # Tool call
-    #
+    # If model decide to call a Tool
     if decision.tool_calls:
+        return build_tool_state(state, decision)
+    
+    # Persist assistant response here since it's agent ownership
+    persist_assistant_response(state, decision)
 
-        return {
-            "messages": [
-                AIMessage(
-                    content="",
-                    tool_calls=[
-                        tool.model_dump()
-                        for tool in decision.tool_calls
-                    ],
-                )
-            ]
-        }
-
-    #
-    # Final answer
-    #
-    return {
-        "messages": [
-            AIMessage(
-                content=decision.response
-            )
-        ]
-    }
+    # So no tool call => we have final answer now
+    return build_response_state(decision)

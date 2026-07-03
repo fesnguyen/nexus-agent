@@ -1,5 +1,5 @@
 from langchain_core.messages import ToolMessage
-from app.core.app import container
+from app.core.app import agent_context
 
 def tool_node(state):
 
@@ -9,9 +9,22 @@ def tool_node(state):
     tool_args = first_tool_call["args"]
     tool_id = first_tool_call["id"]
 
-    tool = container.tool_registry.get(tool_name)
+    # Persist assistant tool call
+    agent_context.conversation_service.save_tool_call(
+        conversation_id=state["conversation_id"],
+        tool_call=first_tool_call,
+    )
 
+    # Tool execution
+    tool = agent_context.tool_registry.get(tool_name)
     result = tool.run(**tool_args)
+
+    # Persist tool result
+    result_text = str(result)
+    agent_context.conversation_service.save_tool_result(
+        conversation_id=state["conversation_id"],
+        content=result_text,
+    )
 
     return {
         "messages": [

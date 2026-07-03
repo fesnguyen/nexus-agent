@@ -5,7 +5,8 @@ import os
 
 from fastapi import FastAPI
 
-from app.core.app import container
+from app.api.services.chat_service import ChatService
+from app.core.app import agent_context
 from app.graph.workflow import build_workflow
 from langchain_core.messages import HumanMessage
 from app.api.routes.chat import router as chat_router
@@ -27,18 +28,19 @@ async def lifespan(app: FastAPI):
     print("Starting Nexus...")
     print("=" * 80)
 
-    container.initialize()
+    # Initialize all agent relevant stuffs
+    agent_context.initialize()
 
     print("Container initialize success!")
 
-    app.state.workflow = build_workflow()
+    workflow = build_workflow()
 
-    #
-    # TODO:
-    # Initialize RAG
-    # Initialize Memory
-    # Load Model
-    #
+    chat_service = ChatService(
+        workflow=workflow,
+        conversation_service=agent_context.conversation_service,
+    )
+
+    app.state.chat_service = chat_service
 
     yield
 

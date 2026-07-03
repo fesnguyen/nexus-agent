@@ -15,10 +15,15 @@ from app.graph.states.tool import ToolState
 class State(TypedDict, total=False):
 
     # =====================
-    # Conversation
+    # Message centric, this is the only source of truth for agent decision
     # =====================
-
     messages: Annotated[list, add_messages]
+
+    # =====================
+    # Conversation id to manage conversation history
+    # =====================
+    conversation_id: str
+
 
     # =====================
     # Domain States

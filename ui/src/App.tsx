@@ -83,16 +83,13 @@ export default function App() {
       // Construct the explicit payload payload matching ChatRequest
       const payload: ChatRequest = {
         conversationId: convId,
-        model: activeModelId,
         toggles,
-        messages: [...activeConversation.messages, userMessage].map((m) => ({
-          role: m.role as 'user' | 'assistant',
-          content: m.content,
-        })), 
+        message: text, 
       };
 
       const res = await api.sendMessage(payload);
 
+      // Add reponse message to conversation
       updateConversation(convId, (c) => ({
         ...c,
         messages: [

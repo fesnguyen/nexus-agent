@@ -1,16 +1,11 @@
-from typing import Any, Dict, List
-
+from typing import Any, Dict, List, Literal
 from pydantic import BaseModel, Field
 
-class MessageSchema(BaseModel):
-    role: str
-    content: str
 
 class ChatRequest(BaseModel):
     # camelCase fields mapped to match your JavaScript keys exactly
     conversation_id: str = Field(..., alias="conversationId")
-    model: str
-    messages: List[MessageSchema]
+    message: str
     toggles: Dict[str, Any] = Field(default_factory=dict)
 
     class Config:

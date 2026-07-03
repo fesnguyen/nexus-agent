@@ -5,7 +5,7 @@ Chat API
 from __future__ import annotations
 
 from fastapi import APIRouter, Request, UploadFile, File, Form
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, BaseMessage
 from PIL import Image
 
 from app.api.schemas.chat import ChatRequest, ChatResponse
@@ -25,24 +25,13 @@ async def chat(
     Chat with Nexus.
     """
 
-    message = payload.messages[-1]
+    chat_service = request.app.state.chat_service
 
-    workflow = request.app.state.workflow
+    response = chat_service.chat(
+        conversation_id=payload.conversation_id,
+        message=payload.message,
+    )
 
-    # Multimodal model later
-    # images = []
-    # if image is not None:
-    #     images.append(Image.open(image.file))
-
-    state = {
-        "messages": [
-            HumanMessage(
-                content=message.content,
-            )
-        ],
-        "images": None,
-    }
-
-    result = workflow.invoke(state)
-
-    return ChatResponse(content=result['messages'][-1].content)
+    return ChatResponse(
+        content=response,
+    )

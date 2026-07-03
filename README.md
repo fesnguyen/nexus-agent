@@ -1,16 +1,50 @@
-# nexus-agent
+# Nexus Agent
+
 Agentic RAG assistant powered by local LLMs.
 
-# Start
+## Prerequisites
+
+- Micromamba
+- Node.js + npm
+
+## Create the environment
+
+```bash
+micromamba create -f environment.yml
+micromamba activate nexus-agent-env
 ```
-# Start API (wrapper with assumed preset names / base which specific names)
-fastapi dev / uvicorn main:app reload
 
-fastapi run / uvicorn main:app --host 0.0.0.0 --port 8000
+## Start the backend
 
-Note: left / right have same meaning, can pass same arguments like --reload-exclude "unsloth_compiled_cache/*"
+Development:
 
-# Start UI
+```bash
+fastapi dev app/main.py
+```
+
+Production:
+
+```bash
+fastapi run app/main.py
+```
+
+## Start the frontend
+
+```bash
+cd ui
 npm install
 npm run dev
 ```
+
+## Project Structure
+
+app/
+├── api/
+├── graph/
+├── memory/
+├── models/
+├── prompt/
+├── rag/
+└── tools/
+
+ui/

@@ -1,8 +1,3 @@
-export interface Message {
-  role: "user" | "assistant";
-  content: string;
-}
-
 export interface Attachment {
   id: string;
   type: "image";
@@ -17,7 +12,6 @@ export interface Toggles {
 
 export interface ChatRequest {
   conversationId: string;    // The unique ID matching your backend
-  model: string;             // The activeModelId string
-  messages: Message[];       // The array of message history objects
+  message: string;       // The array of message history objects
   toggles: Toggles;          // Features enabled for the chat generation
 }

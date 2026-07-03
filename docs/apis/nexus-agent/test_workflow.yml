@@ -7,11 +7,12 @@ http:
   method: POST
   url: 127.0.0.1:8000/chat
   body:
-    type: multipart-form
-    data:
-      - name: message
-        type: text
-        value: Hello nexus
+    type: json
+    data: |-
+      {
+        "conversationId": "justanid",
+        "message": "Hello nexus"
+      }
   auth: inherit
 
 settings:
