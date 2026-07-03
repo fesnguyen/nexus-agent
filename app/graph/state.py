@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, NotRequired
 from typing import Any
 from typing import TypedDict
 
@@ -24,13 +24,8 @@ class State(TypedDict, total=False):
     # =====================
     conversation_id: str
 
-
     # =====================
     # Domain States
     # =====================
-
-    planning: PlanningState
-    retrieval: RetrievalState
-    multimodal: MultimodalState
-
-    memory: MemoryState
+    memory_context: NotRequired[str]
+    retrieval_context: NotRequired[str]

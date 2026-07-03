@@ -13,11 +13,6 @@ class AgentDecision(BaseModel):
     Graph routing is based entirely on action.
     """
 
-    thought: str | None = Field(
-        default=None,
-        description="Reasoning summary.",
-    )
-
     response: str | None = Field(
         default=None,
         description="Final answer or response to the user query.",

@@ -7,6 +7,7 @@ from app.graph.workers.agent_worker import (
     get_user_query,
     invoke_model,
     persist_assistant_response,
+    retrieve_contexts,
     retrieve_memory,
     retrieve_rag,
 )
@@ -22,14 +23,10 @@ def agent_node(state: State):
     + Lead to tool/response
     """
 
-    # Get user query for this run
-    user_query = get_user_query(state)
-
-    # Retrieve context base on lastest message
-    memory_context = retrieve_memory(user_query)
-
-    # Retrieval rag context as a service, not a tool
-    retrieval_context = retrieve_rag(state, user_query)
+    # Retrieval memory and rag context
+    memory_context, retrieval_context = retrieve_contexts(
+        state,
+    )
 
     # System Prompt
     system_prompt = build_system_prompt(memory_context, retrieval_context)
@@ -39,7 +36,7 @@ def agent_node(state: State):
 
     # If model decide to call a Tool
     if decision.tool_calls:
-        return build_tool_state(state, decision)
+        return build_tool_state(decision, memory_context, retrieval_context)
     
     # Persist assistant response here since it's agent ownership
     persist_assistant_response(state, decision)

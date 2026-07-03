@@ -89,7 +89,6 @@ class LLMQueryRewriter(BaseQueryRewriter):
             response_model=RewrittenQuery,
         )
 
-        print("Query has been rewritten!, ", result.rewritten_query)
         return result.rewritten_query
 
     def _build_prompt(

@@ -34,6 +34,49 @@ def get_user_query(
     return ""
 
 
+def retrieve_contexts(
+    state: State,
+) -> tuple[str, str]:
+    """
+    Retrieve memory and RAG contexts for the current query.
+
+    Contexts are cached in the workflow state so they are only
+    retrieved once during a workflow execution.
+    """
+
+    user_query = get_user_query(state)
+
+    #
+    # Short queries usually don't benefit from retrieval.
+    #
+    if not user_query or len(user_query.split()) <= 3:
+        return "", ""
+
+    #
+    # Long-term memory
+    #
+    memory_context = state.get("memory_context")
+
+    if memory_context is None:
+        memory_context = retrieve_memory(user_query)
+
+    #
+    # Knowledge retrieval
+    #
+    retrieval_context = state.get("retrieval_context")
+
+    if retrieval_context is None:
+        retrieval_context = retrieve_rag(
+            state,
+            user_query,
+        )
+
+    return (
+        memory_context,
+        retrieval_context,
+    )
+
+
 def retrieve_memory(
     user_query: str,
 ) -> str:
@@ -121,8 +164,9 @@ def invoke_model(
 
 
 def build_tool_state(
-    state: State,
     decision: AgentDecision,
+    memory_context: str | None,
+    retrieval_context: str | None,
 ):
     """
     Build the next graph state for tool execution.
@@ -137,7 +181,9 @@ def build_tool_state(
                     for tool in decision.tool_calls
                 ],
             )
-        ]
+        ],
+        "memory_context": memory_context,
+        "retrieval_context": retrieval_context,
     }
 
 def persist_assistant_response(state, decision):
@@ -162,5 +208,5 @@ def build_response_state(
             AIMessage(
                 content=decision.response,
             )
-        ]
+        ],
     }

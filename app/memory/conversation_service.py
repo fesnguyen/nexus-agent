@@ -200,6 +200,7 @@ class ConversationService:
                             content=json.dumps(
                                 {
                                     "response": row["content"],
+                                    "tool_calls": [],
                                 }
                             )
                         )
@@ -208,11 +209,16 @@ class ConversationService:
                 case ("assistant", "tool_call"):
                     history.append(
                         AIMessage(
-                            content=row["content"],
+                            content=json.dumps(
+                                {
+                                    "response": "",
+                                    "tool_calls": [
+                                        json.loads(row["content"])
+                                    ],
+                                }
+                            ),
                             tool_calls=[
-                                json.loads(
-                                    row["content"]
-                                )
+                                json.loads(row["content"])
                             ],
                         )
                     )
