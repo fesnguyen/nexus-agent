@@ -169,6 +169,11 @@ class ConversationService:
         self,
         conversation_id: str,
     ) -> list[BaseMessage]:
+        """
+        Base on the historical messages from db, rebuild the chat history
+        Assistant role message need to include "thought", "response" and "tool_calls"
+        to make its behaviours consistent
+        """
 
         history: list[BaseMessage] = []
 
@@ -199,6 +204,7 @@ class ConversationService:
                         AIMessage(
                             content=json.dumps(
                                 {
+                                    "thought": "Ignored",
                                     "response": row["content"],
                                     "tool_calls": [],
                                 }
@@ -211,6 +217,7 @@ class ConversationService:
                         AIMessage(
                             content=json.dumps(
                                 {
+                                    "thought": "Ignored",
                                     "response": "",
                                     "tool_calls": [
                                         json.loads(row["content"])
