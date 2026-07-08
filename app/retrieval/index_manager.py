@@ -112,6 +112,8 @@ class IndexManager:
             embeddings
         )
 
+        self._vector_store.save()
+
         #
         # Store chunks
         #
@@ -165,3 +167,36 @@ class IndexManager:
             chunks=chunks,
             embeddings=embeddings,
         )
+    
+    def load(self) -> IndexResult:
+        """
+        Load an existing retrieval index.
+        """
+
+        #
+        # Load FAISS
+        #
+        self._vector_store.load()
+
+        #
+        # Load chunks
+        #
+        chunks = self._chunk_store.list()
+
+        #
+        # Load documents
+        #
+        documents = self._loader.load()
+
+        return IndexResult(
+            documents=documents,
+            chunks=chunks,
+            embeddings=None,
+        )
+    
+        
+    def exists(self) -> bool:
+        """
+        Temporary check if the faiss store exist
+        """
+        return self._vector_store.exists()

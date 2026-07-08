@@ -19,7 +19,8 @@ from configs.agent_settings import (
 
 from configs.knowledge_settings import (
     KNOWLEDGE_DB_PATH,
-    KNOWLEDGE_FILES_PATH,
+    KNOWLEDGE_SOURCE_DIR,
+    KNOWLEDGE_FAISS_PATH,
 )
 
 from app.ranking.reranker import MemoryReranker
@@ -79,8 +80,9 @@ class AgentContext:
         self.context_compressor = EmbeddingContextCompressor()
 
         self.retrieval_service = RAGService(
-            knowledge_dir=KNOWLEDGE_FILES_PATH,
+            knowledge_dir=KNOWLEDGE_SOURCE_DIR,
             db_path=KNOWLEDGE_DB_PATH,
+            faiss_path=KNOWLEDGE_FAISS_PATH,
             query_rewriter=self.llm_query_rewriter,
             context_compressor = self.context_compressor,
         )
