@@ -1,8 +1,8 @@
 import json
 import re
 
-from app.memory.models import Memory, MemoryExtractionResult
-from app.memory.models import MemoryType
+from app.memory.long_term.models import Memory, MemoryExtractionResult
+from app.memory.long_term.models import MemoryType
 from app.models.base import BaseLLM
 
 from langchain_core.messages import SystemMessage, HumanMessage

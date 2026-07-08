@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Sidebar from "./components/Sidebar/Sidebar.jsx";
 import TopBar from "./components/TopBar/TopBar.jsx";
 import ChatArea from "./components/Chat/ChatArea.jsx";
@@ -18,16 +18,43 @@ export default function App() {
   const [activeModelId, setActiveModelId] = useState(MOCK_MODELS[0].id);
   const [sending, setSending] = useState(false);
 
-  const [conversations, setConversations] = useState(() => [
-    newConversation(),
-  ]);
-  const [activeConversationId, setActiveConversationId] = useState(
-    conversations[0].id
-  );
+  const [conversations, setConversations] = useState([]);
+  const [activeConversationId, setActiveConversationId] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   const activeConversation = conversations.find(
     (c) => c.id === activeConversationId
   );
+
+  // Load conversation list onload
+  useEffect(() => {
+    async function fetchConversations() {
+      try {
+        setLoading(true);
+        const data = await api.getConversations(); 
+        
+        if (data && data.length > 0) {
+          setConversations(data);
+          setActiveConversationId(data[0].id);
+        } else {
+          // Fallback: No conversation available, create new one
+          const fallbackChat = newConversation();
+          setConversations([fallbackChat]);
+          setActiveConversationId(fallbackChat.id);
+        }
+      } catch (err) {
+        console.error("Failed to load conversations:", err);
+        // Fallback on error so the app remains usable
+        const fallbackChat = newConversation();
+        setConversations([fallbackChat]);
+        setActiveConversationId(fallbackChat.id);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchConversations();
+  }, []); // Empty dependency array means this runs exactly once on load
 
   /**
    * Find conversation with this ID and replace it.
@@ -132,6 +159,7 @@ export default function App() {
         onNewChat={handleNewChat}
         conversations={conversations}
         activeConversationId={activeConversationId}
+        loading={loading}
         onSelectConversation={(id) => {
           setActiveConversationId(id);
           setActiveView("chat");

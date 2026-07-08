@@ -25,12 +25,15 @@ export const api = {
   // Placeholder — wire this up to your real chat/workflow endpoint
   // (e.g. a POST /chat route that invokes app.state.workflow).
   sendMessage: (payload: ChatRequest) =>
-    request("/chat", {
+    request("/api/chat", {
       method: "POST",
       body: JSON.stringify(payload),
     }),
 
   listModels: () => request("/models"),
 
-  listConversations: () => request("/conversations"),
+  getConversations: () => 
+    request("/api/conversations", {
+      method: "POST",
+    }),
 };

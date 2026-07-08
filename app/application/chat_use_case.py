@@ -4,10 +4,11 @@ Chat service.
 
 from __future__ import annotations
 
-from app.memory.conversation_service import ConversationService
+from app.api.schemas.conversation import Conversation
+from app.application.conversation_service import ConversationService
 
 
-class ChatService:
+class ChatUseCase:
     """
     Application service responsible for processing chat requests.
     """
@@ -64,3 +65,14 @@ class ChatService:
         final_state = self.workflow.invoke(state)
 
         return final_state["messages"][-1].content
+    
+    def getConversations(self,) -> list[Conversation]:
+        """
+        Get conversation list
+        """
+
+        conversations = self.conversation_service.list_conversations()
+
+        
+
+        

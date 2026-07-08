@@ -5,7 +5,7 @@ import os
 
 from fastapi import FastAPI
 
-from app.api.services.chat_service import ChatService
+from app.application.chat_use_case import ChatUseCase
 from app.core.app import agent_context
 from app.graph.workflow import build_workflow
 from langchain_core.messages import HumanMessage
@@ -35,12 +35,12 @@ async def lifespan(app: FastAPI):
 
     workflow = build_workflow()
 
-    chat_service = ChatService(
+    chat_use_case = ChatUseCase(
         workflow=workflow,
         conversation_service=agent_context.conversation_service,
     )
 
-    app.state.chat_service = chat_service
+    app.state.chat_use_case = chat_use_case
 
     yield
 

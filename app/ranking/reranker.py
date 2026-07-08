@@ -1,6 +1,6 @@
 from sentence_transformers import CrossEncoder
 
-from app.memory.models import Memory
+from app.memory.long_term.models import Memory
 
 
 class MemoryReranker:

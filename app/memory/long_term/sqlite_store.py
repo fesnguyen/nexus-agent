@@ -4,9 +4,9 @@ import sqlite3
 from datetime import UTC, datetime
 from pathlib import Path
 
-from app.memory.base import BaseMemoryStore
-from app.memory.models import Memory
-from app.memory.models import MemoryType
+from app.memory.long_term.base import BaseMemoryStore
+from app.memory.long_term.models import Memory
+from app.memory.long_term.models import MemoryType
 
 
 class SQLiteMemoryStore(BaseMemoryStore):

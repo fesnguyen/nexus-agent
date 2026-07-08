@@ -13,6 +13,7 @@ export default function Sidebar({
   conversations,
   activeConversationId,
   onSelectConversation,
+  loading,
 }) {
   return (
     <aside
@@ -69,6 +70,7 @@ export default function Sidebar({
           activeId={activeConversationId}
           onSelect={onSelectConversation}
           collapsed={collapsed}
+          loading={loading}
         />
       </div>
 

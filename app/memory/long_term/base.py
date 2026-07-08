@@ -3,7 +3,7 @@
 from abc import ABC
 from abc import abstractmethod
 
-from app.memory.models import Memory
+from app.memory.long_term.models import Memory
 
 
 class BaseMemoryStore(ABC):
