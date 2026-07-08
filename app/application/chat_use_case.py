@@ -5,7 +5,7 @@ Chat service.
 from __future__ import annotations
 
 from app.api.schemas.conversation import Conversation
-from app.application.conversation_service import ConversationService
+from app.memory.conversation.conversation_service import ConversationService
 
 
 class ChatUseCase:
