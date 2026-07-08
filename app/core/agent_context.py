@@ -1,25 +1,28 @@
-from app.memory.conversation_service import ConversationService
-from app.memory.conversation_store import ConversationStore
+from app.memory.conversation.conversation_service import ConversationService
+from app.memory.conversation.conversation_store import ConversationStore
 from app.models.factory import ModelFactory
-from app.memory.extractor import MemoryExtractor
+from app.memory.long_term.extractor import MemoryExtractor
 from app.retrieval.processing.embedding_context_compressor import EmbeddingContextCompressor
 from app.retrieval.processing.llm_query_rewriter import LLMQueryRewriter
 from app.retrieval.rag_service import RAGService
-from app.memory.memory_faiss_store import MemoryFaissStore
-from app.memory.manager import MemoryManager
-from app.memory.sqlite_store import SQLiteMemoryStore
+from app.memory.long_term.memory_faiss_store import MemoryFaissStore
+from app.memory.long_term.manager import MemoryManager
+from app.memory.long_term.sqlite_store import SQLiteMemoryStore
 from app.models.base import BaseLLM
 from app.tools.registry import ToolRegistry
 # from app.retrieval.processing.heuristic_query_rewriter import HeuristicQueryRewriter
 
-from app.memory.configs.settings import (
-    MEMORY_DB_PATH,
-    FAISS_INDEX_PATH,
+from configs.agent_settings import (
+    AGENT_DB_PATH,
+    MEMORY_FAISS_PATH,
 )
-from app.retrieval.configs.settings import (
-    KNOWLEDGE_DIR,
-    RETRIEVAL_DB_PATH,
+
+from configs.knowledge_settings import (
+    KNOWLEDGE_DB_PATH,
+    KNOWLEDGE_SOURCE_DIR,
+    KNOWLEDGE_FAISS_PATH,
 )
+
 from app.ranking.reranker import MemoryReranker
 
 
@@ -33,7 +36,7 @@ class AgentContext:
         # ---------------------------------------------------------
 
         self.conversation_store = ConversationStore(
-            db_path="data/conversations.db",
+            db_path=AGENT_DB_PATH,
         )
 
         self.conversation_service = ConversationService(
@@ -45,11 +48,11 @@ class AgentContext:
         )
 
         self.memory_store = SQLiteMemoryStore(
-            db_path=MEMORY_DB_PATH
+            db_path=AGENT_DB_PATH
         )
 
         self.faiss_store = MemoryFaissStore(
-            index_path=FAISS_INDEX_PATH,
+            index_path=MEMORY_FAISS_PATH,
         )
 
         self.memory_reranker = (
@@ -77,8 +80,9 @@ class AgentContext:
         self.context_compressor = EmbeddingContextCompressor()
 
         self.retrieval_service = RAGService(
-            knowledge_dir=KNOWLEDGE_DIR,
-            db_path=RETRIEVAL_DB_PATH,
+            knowledge_dir=KNOWLEDGE_SOURCE_DIR,
+            db_path=KNOWLEDGE_DB_PATH,
+            faiss_path=KNOWLEDGE_FAISS_PATH,
             query_rewriter=self.llm_query_rewriter,
             context_compressor = self.context_compressor,
         )

@@ -29,7 +29,11 @@ class FaissStore:
     FAISS vector store.
     """
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        index_path: Path,
+    ) -> None:
+        self._index_path = index_path
         self._index: faiss.Index | None = None
 
     @property
@@ -105,7 +109,6 @@ class FaissStore:
 
     def save(
         self,
-        path: Path,
     ) -> None:
         """
         Save the index.
@@ -118,17 +121,19 @@ class FaissStore:
 
         faiss.write_index(
             self._index,
-            str(path),
+            str(self._index_path),
         )
 
     def load(
         self,
-        path: Path,
     ) -> None:
         """
         Load an existing FAISS index.
         """
 
         self._index = faiss.read_index(
-            str(path),
+            str(self._index_path),
         )
+
+    def exists(self) -> bool:
+        return self._index_path.exists()

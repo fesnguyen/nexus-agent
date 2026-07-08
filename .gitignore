@@ -23,8 +23,14 @@ vectorstore/*
 !vectorstore/.gitkeep
 
 # Data
+# 1. Ignore everything under any data folder
 **/data/*
-!data/.gitkeep
+
+# 2. But do NOT ignore the specific subdirectories themselves
+!**/data/sources/
+
+# 3. Finally, do NOT ignore the contents inside those subdirectories
+!**/data/sources/**
 
 # UI / node_modules
 **/node_modules/**

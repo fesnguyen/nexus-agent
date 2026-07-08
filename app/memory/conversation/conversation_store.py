@@ -4,8 +4,14 @@ Conversation SQLite repository.
 
 from __future__ import annotations
 
+from app.api.schemas.message import Message
 import sqlite3
 from pathlib import Path
+from typing import TypeVar
+
+from pydantic import BaseModel, TypeAdapter
+
+from app.api.schemas.conversation import ConversationSummary
 
 
 CREATE_CONVERSATIONS_TABLE = """
@@ -38,6 +44,16 @@ CREATE TABLE IF NOT EXISTS messages (
 );
 """
 
+TRIGGER_UPDATE_CONVERSATION_UPDATED_AT = """
+CREATE TRIGGER IF NOT EXISTS update_conversation_updated_at
+AFTER INSERT ON messages
+BEGIN
+    UPDATE conversations
+    SET updated_at = CURRENT_TIMESTAMP
+    WHERE id = NEW.conversation_id;
+END;
+"""
+
 
 class ConversationStore:
     """
@@ -45,6 +61,35 @@ class ConversationStore:
 
     This class contains database operations only.
     """
+
+    # ------------------------------------------------------------------
+    # Utils
+    # ------------------------------------------------------------------
+
+    T = TypeVar("T")
+
+    def _model(self, model: type[T], row: sqlite3.Row) -> T:
+        """
+        Convert a SQLite row into a validated Pydantic model.
+        """
+        return model.model_validate(dict(row))
+    
+    def _models(
+        self,
+        adapter: TypeAdapter[list[T]],
+        rows: list[sqlite3.Row],
+    ) -> list[T]:
+        """
+        Convert SQLite rows into a validated list of Pydantic models using
+        a cached TypeAdapter for efficient bulk validation.
+        """
+        return adapter.validate_python(
+            [dict(row) for row in rows]
+        )
+    
+    # ------------------------------------------------------------------
+    # Init
+    # ------------------------------------------------------------------
 
     def __init__(
         self,
@@ -58,6 +103,14 @@ class ConversationStore:
         )
 
         self._initialize()
+
+        self._conversation_summary_adapter = TypeAdapter(
+            list[ConversationSummary]
+        )
+
+        self._message_adapter = TypeAdapter(
+            list[Message]
+        )
 
     def _connect(self) -> sqlite3.Connection:
 
@@ -83,6 +136,10 @@ class ConversationStore:
 
             connection.execute(
                 CREATE_MESSAGES_TABLE
+            )
+
+            connection.execute(
+                TRIGGER_UPDATE_CONVERSATION_UPDATED_AT
             )
 
             connection.commit()

@@ -12,7 +12,7 @@ from app.api.schemas.chat import ChatRequest, ChatResponse
 
 
 router = APIRouter(
-    prefix="/chat",
+    prefix="/api/chat",
     tags=["Chat"],
 )
 
@@ -25,9 +25,9 @@ async def chat(
     Chat with Nexus.
     """
 
-    chat_service = request.app.state.chat_service
+    chat_use_case = request.app.state.chat_use_case
 
-    response = chat_service.chat(
+    response = chat_use_case.chat(
         conversation_id=payload.conversation_id,
         message=payload.message,
     )
@@ -35,3 +35,4 @@ async def chat(
     return ChatResponse(
         content=response,
     )
+    

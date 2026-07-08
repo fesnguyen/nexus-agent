@@ -1,5 +1,5 @@
-from app.memory.base import BaseMemoryStore
-from app.memory.memory_faiss_store import MemoryFaissStore
+from app.memory.long_term.base import BaseMemoryStore
+from app.memory.long_term.memory_faiss_store import MemoryFaissStore
 from app.ranking.reranker import MemoryReranker
 
 

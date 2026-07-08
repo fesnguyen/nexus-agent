@@ -45,6 +45,7 @@ class RAGService:
         self,
         knowledge_dir: Path,
         db_path: Path,
+        faiss_path: Path,
         query_rewriter: BaseQueryRewriter,
         context_compressor: BaseContextCompressor,
         embedding_model: str = "BAAI/bge-small-en-v1.5",
@@ -55,6 +56,12 @@ class RAGService:
         # Initialize
         self.db_path = db_path
         self.db_path.parent.mkdir(
+            parents=True,
+            exist_ok=True,
+        )
+
+        self.faiss_path = faiss_path
+        self.faiss_path.parent.mkdir(
             parents=True,
             exist_ok=True,
         )
@@ -87,7 +94,9 @@ class RAGService:
 
         self._mapping_store = MappingStore(db_path)
 
-        self._vector_store = FaissStore()
+        self._vector_store = FaissStore(
+            index_path=faiss_path,
+        )
 
         #
         # Index manager
@@ -122,7 +131,10 @@ class RAGService:
         Build the retrieval index.
         """
 
-        result = self._index_manager.build()
+        if self._index_manager.exists():
+            result = self._index_manager.load()
+        else:
+            result = self._index_manager.build()
 
         self._documents = result.documents
 
@@ -170,6 +182,5 @@ class RAGService:
 
         # Context compression
         compressed_result = self.context_compressor.compress(query, results)
-        print(f"Context has been compressed: {compressed_result}")
 
         return compressed_result

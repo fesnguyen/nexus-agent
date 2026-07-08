@@ -15,7 +15,7 @@ from langchain_core.messages import (
     ToolMessage,
 )
 
-from app.memory.conversation_store import ConversationStore
+from app.memory.conversation.conversation_store import ConversationStore
 
 
 class ConversationService:
