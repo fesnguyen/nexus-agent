@@ -29,10 +29,6 @@ class EmbeddingManager:
         self._model: SentenceTransformer | None = None
         self._lock = Lock()
 
-    @property
-    def is_loaded(self) -> bool:
-        return self._model is not None
-
     def initialize(self) -> None:
         if self._model is not None:
             return
@@ -48,6 +44,17 @@ class EmbeddingManager:
             )
 
             print(f"Embedding model '{self._model_name}' loaded.")
+
+
+    def encode(self, *args, **kwargs):
+        """
+        Call SetenceTransformer model for encoding
+        """
+        if self._model is None:
+            self.initialize()
+
+        return self._model.encode(*args, **kwargs)
+
 
     def embed(
         self,
@@ -80,6 +87,7 @@ class EmbeddingManager:
         return embeddings.astype(
             np.float32
         )
+
 
     def embed_query(
         self,

@@ -35,10 +35,6 @@ class ModelManager:
     def current_model_name(self) -> str:
         return self._model_name
 
-    @property
-    def is_loaded(self) -> bool:
-        return self._model is not None
-
     def initialize(self) -> None:
         """
         Load the active model.

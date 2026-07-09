@@ -85,7 +85,9 @@ class AgentContext:
             model_name=EMBEDDING_MODEL_NAME,
         )
 
-        self.context_compressor = EmbeddingContextCompressor()
+        self.context_compressor = EmbeddingContextCompressor(
+            embedding_manager=self.embedding_manager,
+        )
 
         self.retrieval_service = RAGService(
             knowledge_dir=KNOWLEDGE_SOURCE_DIR,
