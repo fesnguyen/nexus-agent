@@ -20,9 +20,8 @@ class Conversation(ConversationSummary):
 
 
 class ConversationsResponse(BaseSchema):
-    conversations: list[ConversationSummary]
-    active_conversation: Conversation | None = None
+    items: list[Conversation]
 
 
 class ConversationResponse(BaseSchema):
-    conversation: Conversation
+    data: Conversation

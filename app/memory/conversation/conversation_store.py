@@ -4,14 +4,14 @@ Conversation SQLite repository.
 
 from __future__ import annotations
 
-from app.api.schemas.message import Message
+from app.memory.conversation.conversation_schemas import Message
 import sqlite3
 from pathlib import Path
 from typing import TypeVar
 
-from pydantic import BaseModel, TypeAdapter
+from pydantic import TypeAdapter
 
-from app.api.schemas.conversation import ConversationSummary
+from app.api.schemas.conversation import Conversation, ConversationSummary
 
 
 CREATE_CONVERSATIONS_TABLE = """
@@ -181,7 +181,7 @@ class ConversationStore:
     def get_conversation(
         self,
         conversation_id: str,
-    ) -> sqlite3.Row | None:
+    ) -> Conversation | None:
 
         with self._connect() as connection:
 
@@ -192,25 +192,39 @@ class ConversationStore:
                 WHERE id = ?
                 """,
                 (conversation_id,),
-            )
+            ).fetchone()
 
-            return cursor.fetchone()
+            if cursor is None:
+                return None
+
+            return Conversation(
+                id=cursor["id"],
+                title=cursor["title"],
+                created_at=cursor["created_at"],
+                updated_at=cursor["updated_at"],
+            )
 
     def list_conversations(
         self,
-    ) -> list[sqlite3.Row]:
-
+    ) -> list[Conversation]:
         with self._connect() as connection:
-
-            cursor = connection.execute(
+            rows = connection.execute(
                 """
                 SELECT *
                 FROM conversations
                 ORDER BY updated_at DESC
                 """
-            )
+            ).fetchall()
 
-            return list(cursor.fetchall())
+        return [
+            Conversation(
+                id=row["id"],
+                title=row["title"],
+                created_at=row["created_at"],
+                updated_at=row["updated_at"],
+            )
+            for row in rows
+        ]
 
     def rename_conversation(
         self,
@@ -314,7 +328,7 @@ class ConversationStore:
 
         with self._connect() as connection:
 
-            cursor = connection.execute(
+            rows = connection.execute(
                 """
                 SELECT *
                 FROM messages
@@ -323,6 +337,16 @@ class ConversationStore:
                 ORDER BY id ASC
                 """,
                 (conversation_id,),
-            )
+            ).fetchall()
 
-            return list(cursor.fetchall())
+            return [
+                Message(
+                    id=row["id"],
+                    conversation_id=row["conversation_id"],
+                    role=row["role"],
+                    type=row["type"],
+                    content=row["content"],
+                    created_at=row["created_at"]
+                )
+                for row in rows
+            ]

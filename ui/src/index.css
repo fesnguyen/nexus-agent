@@ -2,6 +2,29 @@
 
 @tailwind base;
 @tailwind components;
+
+@layer components {
+  .loading-overlay {
+    @apply fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm;
+  }
+
+  .loading-card {
+    @apply flex items-center gap-4 rounded-2xl border border-white/20 bg-white px-6 py-4 shadow-2xl;
+  }
+
+  .loading-spinner {
+    @apply h-6 w-6 animate-spin rounded-full border-[3px] border-accentSoft border-t-accent;
+  }
+
+  .loading-title {
+    @apply font-medium text-ink;
+  }
+
+  .loading-subtitle {
+    @apply text-sm text-ink/60;
+  }
+}
+
 @tailwind utilities;
 
 * {

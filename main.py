@@ -6,10 +6,13 @@ import os
 from fastapi import FastAPI
 
 from app.application.chat_use_case import ChatUseCase
+from app.application.conversation_use_case import ConversationUseCase
+from app.application.application_container import ApplicationContainer
 from app.core.app import agent_context
 from app.graph.workflow import build_workflow
 from langchain_core.messages import HumanMessage
 from app.api.routes.chat import router as chat_router
+from app.api.routes.conversation import router as conversation_router
 from fastapi.middleware.cors import CORSMiddleware
 
 # ============================================================
@@ -35,12 +38,20 @@ async def lifespan(app: FastAPI):
 
     workflow = build_workflow()
 
+    # Application container inject to state, used by request
     chat_use_case = ChatUseCase(
         workflow=workflow,
         conversation_service=agent_context.conversation_service,
     )
+    conversation_use_case = ConversationUseCase(
+        conversation_service=agent_context.conversation_service,
+    )
+    container = ApplicationContainer(
+        chat_use_case=chat_use_case,
+        conversation_use_case=conversation_use_case,
+    )
 
-    app.state.chat_use_case = chat_use_case
+    app.state.application = container
 
     yield
 
@@ -85,6 +96,7 @@ app.add_middleware(
 )
 
 app.include_router(chat_router)
+app.include_router(conversation_router)
 
 # ============================================================
 # Routes

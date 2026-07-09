@@ -6,7 +6,7 @@ from app.api.schemas.base import BaseSchema
 
 
 class Message(BaseSchema):
-    id: str
+    id: int
     role: Literal["system", "user", "assistant"]
     type: str
     content: str

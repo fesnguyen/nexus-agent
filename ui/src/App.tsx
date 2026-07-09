@@ -6,6 +6,7 @@ import PlaceholderView from "./components/PlaceholderView.jsx";
 import { MOCK_MODELS, NAV_ITEMS } from "./constants/nav.js";
 import { api } from "./api/client.js";
 import { ChatRequest } from "./types/chat.js";
+import { Conversation } from "./types/conversation.js"
 
 function newConversation() {
   const id = crypto.randomUUID();
@@ -18,7 +19,7 @@ export default function App() {
   const [activeModelId, setActiveModelId] = useState(MOCK_MODELS[0].id);
   const [sending, setSending] = useState(false);
 
-  const [conversations, setConversations] = useState([]);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeConversationId, setActiveConversationId] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -31,11 +32,11 @@ export default function App() {
     async function fetchConversations() {
       try {
         setLoading(true);
-        const data = await api.getConversations(); 
+        const response = await api.getConversations(); 
         
-        if (data && data.length > 0) {
-          setConversations(data);
-          setActiveConversationId(data[0].id);
+        if (response?.items?.length) {
+          setConversations(response.items);
+          setActiveConversationId(response.items[0].id);
         } else {
           // Fallback: No conversation available, create new one
           const fallbackChat = newConversation();
@@ -54,7 +55,7 @@ export default function App() {
     }
 
     fetchConversations();
-  }, []); // Empty dependency array means this runs exactly once on load
+  }, []);
 
   /**
    * Find conversation with this ID and replace it.
@@ -76,6 +77,42 @@ export default function App() {
 
   function handleNavigate(viewId) {
     setActiveView(viewId);
+  }
+
+  /**
+   * Loads a conversation from the backend and updates the local state.
+   *
+   * @param id - The ID of the conversation to load.
+   */
+  async function handleChangeConversation(id: string) {
+    try {
+      setLoading(true);
+
+      // Fetch the full conversation (including messages).
+      const res = await api.getConversation(id);
+      
+      // Update the selected conversation with the latest messages.
+      setConversations((prev) =>
+        prev.map(conversation =>
+          conversation.id === id
+            ? {
+                ...conversation,
+                messages: res.data.messages,
+              }
+            : conversation
+        )
+      );
+
+      // Switch to the selected conversation.
+      setActiveConversationId(id);
+      setActiveView("chat");
+    }
+    catch (err) {
+      console.error(err);
+    }
+    finally {
+      setLoading(false);
+    }
   }
 
   /**
@@ -160,10 +197,7 @@ export default function App() {
         conversations={conversations}
         activeConversationId={activeConversationId}
         loading={loading}
-        onSelectConversation={(id) => {
-          setActiveConversationId(id);
-          setActiveView("chat");
-        }}
+        onSelectConversation={handleChangeConversation}
       />
 
       <div className="flex min-w-0 flex-1 flex-col">
@@ -181,6 +215,20 @@ export default function App() {
           )}
         </main>
       </div>
+      {/* Loading Overlay */}
+      {loading && (
+        <div className="loading-overlay">
+          <div className="loading-card">
+            <div className="loading-spinner" />
+            <div>
+              <p className="loading-title">Processing request</p>
+              <p className="loading-subtitle">
+                Please wait...
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

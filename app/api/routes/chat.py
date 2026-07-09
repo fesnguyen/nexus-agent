@@ -25,7 +25,7 @@ async def chat(
     Chat with Nexus.
     """
 
-    chat_use_case = request.app.state.chat_use_case
+    chat_use_case = request.app.state.application.chat
 
     response = chat_use_case.chat(
         conversation_id=payload.conversation_id,

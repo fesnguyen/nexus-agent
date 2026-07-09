@@ -5,13 +5,18 @@ export interface Attachment {
 }
 
 export interface Toggles {
-  webSearch?: boolean;       // Optional, depending on your app features
+  webSearch?: boolean;
   deepThink?: boolean;
-  [key: string]: any;        // Catch-all allowance for dynamic toggle keys
+  [key: string]: any;
 }
 
 export interface ChatRequest {
-  conversationId: string;    // The unique ID matching your backend
-  message: string;       // The array of message history objects
-  toggles: Toggles;          // Features enabled for the chat generation
+  conversationId: string; 
+  message: string; 
+  toggles: Toggles;
+  attachments?: Attachment[]
+}
+
+export interface ChatResponse {
+  content: string
 }

@@ -65,9 +65,14 @@ class ConversationService:
         self,
         conversation_id: str,
     ):
-        return self.store.get_conversation(
+        conversation = self.store.get_conversation(
             conversation_id,
         )
+        conversation.messages = self.store.get_chat_messages(
+            conversation_id
+        )
+
+        return conversation
 
     def rename_conversation(
         self,
@@ -244,16 +249,3 @@ class ConversationService:
                     )
 
         return history
-
-    # ------------------------------------------------------------------
-    # UI
-    # ------------------------------------------------------------------
-
-    def get_chat_messages(
-        self,
-        conversation_id: str,
-    ):
-
-        return self.store.get_chat_messages(
-            conversation_id,
-        )
