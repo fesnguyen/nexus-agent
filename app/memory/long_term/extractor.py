@@ -7,6 +7,7 @@ from app.models.base import BaseLLM
 
 from langchain_core.messages import SystemMessage, HumanMessage
 
+from app.models.model_manager import ModelManager
 from app.tools.registry import ToolRegistry
 
 
@@ -38,8 +39,8 @@ Schema:
 
 class MemoryExtractor:
 
-    def __init__(self, model: BaseLLM) -> None:
-        self.model = model
+    def __init__(self, model_manager: ModelManager) -> None:
+        self._model_manager = model_manager
 
     def extract(
         self,
@@ -60,7 +61,7 @@ class MemoryExtractor:
                 f"{role}: {message.content}"
             )
 
-        result = self.model.invoke(
+        result = self._model_manager.invoke(
             messages=[
                 SystemMessage(
                     content=MEMORY_EXTRACTION_PROMPT

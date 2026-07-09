@@ -2,6 +2,7 @@ from app.memory.conversation.conversation_service import ConversationService
 from app.memory.conversation.conversation_store import ConversationStore
 from app.models.factory import ModelFactory
 from app.memory.long_term.extractor import MemoryExtractor
+from app.models.model_manager import ModelManager
 from app.retrieval.processing.embedding_context_compressor import EmbeddingContextCompressor
 from app.retrieval.processing.llm_query_rewriter import LLMQueryRewriter
 from app.retrieval.rag_service import RAGService
@@ -66,16 +67,16 @@ class AgentContext:
             self.memory_reranker,
         )
 
-        self.model: BaseLLM = ModelFactory.create(
-            "qwen",
-            "unsloth/Qwen3-4B-Instruct-2507-bnb-4bit",
-            tool_registry = self.tool_registry,
+        self.model_manager = ModelManager(
+            model_name="qwen",
+            model_path="unsloth/Qwen3-4B-Instruct-2507-bnb-4bit",
+            tool_registry=self.tool_registry,
         )
 
-        self.memory_extractor = MemoryExtractor(self.model)
+        self.memory_extractor = MemoryExtractor(self.model_manager)
 
         # self.heuristic_query_rewriter = HeuristicQueryRewriter()
-        self.llm_query_rewriter = LLMQueryRewriter(self.model)
+        self.llm_query_rewriter = LLMQueryRewriter(self.model_manager)
 
         self.context_compressor = EmbeddingContextCompressor()
 

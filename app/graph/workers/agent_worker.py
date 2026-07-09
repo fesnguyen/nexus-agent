@@ -152,7 +152,7 @@ def invoke_model(
     Invoke the language model.
     """
 
-    return agent_context.model.invoke(
+    return agent_context.model_manager.invoke(
         messages=[
             SystemMessage(
                 content=system_prompt,
