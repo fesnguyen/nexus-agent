@@ -19,7 +19,8 @@ class QwenModel(BaseLLM):
         **kwargs,
     ):
         self.model_name = model_name
-        self.max_new_tokens = kwargs.get("max_new_tokens", 1024)
+        self.max_new_tokens = kwargs.get("max_new_tokens", 512)
+        self.max_seq_length = kwargs.get("max_seq_length", self.max_new_tokens * 16)
         self.temperature = kwargs.get("temperature", 0.0)
 
         print(f"Loading model: {model_name}")

@@ -1,13 +1,4 @@
-"""
-Document embedder.
-
-Responsibilities
-----------------
-- Lazily load the embedding model.
-- Convert chunks into embeddings.
-"""
-
-from __future__ import annotations
+from threading import Lock
 
 import numpy as np
 from sentence_transformers import SentenceTransformer
@@ -15,31 +6,48 @@ from sentence_transformers import SentenceTransformer
 from app.retrieval.schema import Chunk
 
 
-class Embedder:
+class EmbeddingManager:
     """
-    Generate dense embeddings using Sentence Transformers.
+    Owns the application's embedding model.
+
+    Responsibilities
+    ----------------
+    - Load the embedding model.
+    - Generate embeddings.
+
+    Future:
+    - Model switching.
+    - Model unloading.
     """
 
     def __init__(
         self,
-        model_name: str = "BAAI/bge-small-en-v1.5",
+        model_name: str,
     ) -> None:
-
         self._model_name = model_name
 
         self._model: SentenceTransformer | None = None
+        self._lock = Lock()
 
     @property
-    def dimension(self) -> int:
-        """
-        Embedding dimension.
-        """
+    def is_loaded(self) -> bool:
+        return self._model is not None
 
-        return self._get_model().get_embedding_dimension()
-    
-    @property
-    def model_name(self) -> str:
-        return self._model_name
+    def initialize(self) -> None:
+        if self._model is not None:
+            return
+
+        with self._lock:
+            if self._model is not None:
+                return
+
+            print(f"Loading embedding model '{self._model_name}'...")
+
+            self._model = SentenceTransformer(
+                self._model_name,
+            )
+
+            print(f"Embedding model '{self._model_name}' loaded.")
 
     def embed(
         self,
@@ -53,15 +61,16 @@ class Embedder:
             raise RuntimeError(
                 "No chunks to embed."
             )
-
-        model = self._get_model()
+        
+        if self._model is None:
+            self.initialize()
 
         texts = [
             chunk.text
             for chunk in chunks
         ]
 
-        embeddings = model.encode(
+        embeddings = self._model.encode(
             texts,
             convert_to_numpy=True,
             normalize_embeddings=True,
@@ -80,9 +89,10 @@ class Embedder:
         Generate an embedding for a search query.
         """
 
-        model = self._get_model()
+        if self._model is None:
+            self.initialize()
 
-        embedding = model.encode(
+        embedding = self._model.encode(
             query,
             convert_to_numpy=True,
             normalize_embeddings=True,
@@ -91,22 +101,3 @@ class Embedder:
         return embedding.astype(
             np.float32
         ).reshape(1, -1)
-
-    def _get_model(
-        self,
-    ) -> SentenceTransformer:
-        """
-        Lazily load the embedding model.
-        """
-
-        if self._model is None:
-
-            print(
-                f"[RAG] Loading embedding model: {self._model_name}"
-            )
-
-            self._model = SentenceTransformer(
-                self._model_name
-            )
-
-        return self._model

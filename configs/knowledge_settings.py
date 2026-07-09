@@ -11,3 +11,5 @@ KNOWLEDGE_DB_PATH = KNOWLEDGE_DIR / "knowledge.db"
 
 # FAISS index for semantic document retrieval.
 KNOWLEDGE_FAISS_PATH = KNOWLEDGE_DIR / "rag" / "semantic.faiss"
+
+EMBEDDING_MODEL_NAME = "BAAI/bge-small-en-v1.5"

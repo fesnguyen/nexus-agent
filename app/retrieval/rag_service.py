@@ -13,7 +13,6 @@ This class intentionally hides the implementation details of:
 - Loader
 - Parser
 - Chunker
-- Embedder
 - FAISS
 - SQLite
 """
@@ -21,14 +20,15 @@ This class intentionally hides the implementation details of:
 from __future__ import annotations
 
 from pathlib import Path
+from threading import Lock
 
+from app.retrieval.embedding_manager import EmbeddingManager
 from app.retrieval.index_manager import IndexManager
 from app.retrieval.ingestion.loader import Loader
 from app.retrieval.ingestion.parser import Parser
 from app.retrieval.processing.base_context_compressor import BaseContextCompressor
 from app.retrieval.processing.base_query_rewriter import BaseQueryRewriter
 from app.retrieval.processing.chunker import Chunker
-from app.retrieval.processing.embedder import Embedder
 from app.retrieval.schema import Chunk, Document, SearchResult
 from app.retrieval.storage.chunk_store import ChunkStore
 from app.retrieval.storage.faiss_store import FaissStore
@@ -46,9 +46,9 @@ class RAGService:
         knowledge_dir: Path,
         db_path: Path,
         faiss_path: Path,
+        embedding_manager: EmbeddingManager,
         query_rewriter: BaseQueryRewriter,
         context_compressor: BaseContextCompressor,
-        embedding_model: str = "BAAI/bge-small-en-v1.5",
         chunk_size: int = 1500,
         chunk_overlap: int = 300,
     ) -> None:
@@ -80,9 +80,7 @@ class RAGService:
             chunk_overlap=chunk_overlap,
         )
 
-        self._embedder = Embedder(
-            model_name=embedding_model,
-        )
+        self._embedding_manager = embedding_manager
 
         #
         # Storage
@@ -105,7 +103,7 @@ class RAGService:
         self._index_manager = IndexManager(
             loader=self._loader,
             chunker=self._chunker,
-            embedder=self._embedder,
+            embedding_manager=self._embedding_manager,
             chunk_store=self._chunk_store,
             file_index_store=self._file_index_store,
             mapping_store=self._mapping_store,
@@ -126,21 +124,24 @@ class RAGService:
 
         self._embeddings = None
 
+        self._lock = Lock()
+
     def initialize(self) -> None:
         """
         Build the retrieval index.
         """
 
-        if self._index_manager.exists():
-            result = self._index_manager.load()
-        else:
-            result = self._index_manager.build()
+        with self._lock:
+            if self._index_manager.exists():
+                result = self._index_manager.load()
+            else:
+                result = self._index_manager.build()
 
-        self._documents = result.documents
+            self._documents = result.documents
 
-        self._chunks = result.chunks
+            self._chunks = result.chunks
 
-        self._embeddings = result.embeddings
+            self._embeddings = result.embeddings
 
     def retrieve(
         self,
@@ -154,7 +155,7 @@ class RAGService:
 
         rewrited_query = self.query_rewriter.rewrite(query)
 
-        query_embedding = self._embedder.embed_query(
+        query_embedding = self._embedding_manager.embed_query(
             rewrited_query
         )
 

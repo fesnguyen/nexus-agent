@@ -1,8 +1,10 @@
+import asyncio
+
 from app.memory.conversation.conversation_service import ConversationService
 from app.memory.conversation.conversation_store import ConversationStore
-from app.models.factory import ModelFactory
 from app.memory.long_term.extractor import MemoryExtractor
 from app.models.model_manager import ModelManager
+from app.retrieval.embedding_manager import EmbeddingManager
 from app.retrieval.processing.embedding_context_compressor import EmbeddingContextCompressor
 from app.retrieval.processing.llm_query_rewriter import LLMQueryRewriter
 from app.retrieval.rag_service import RAGService
@@ -19,6 +21,7 @@ from configs.agent_settings import (
 )
 
 from configs.knowledge_settings import (
+    EMBEDDING_MODEL_NAME,
     KNOWLEDGE_DB_PATH,
     KNOWLEDGE_SOURCE_DIR,
     KNOWLEDGE_FAISS_PATH,
@@ -78,14 +81,46 @@ class AgentContext:
         # self.heuristic_query_rewriter = HeuristicQueryRewriter()
         self.llm_query_rewriter = LLMQueryRewriter(self.model_manager)
 
+        self.embedding_manager = EmbeddingManager(
+            model_name=EMBEDDING_MODEL_NAME,
+        )
+
         self.context_compressor = EmbeddingContextCompressor()
 
         self.retrieval_service = RAGService(
             knowledge_dir=KNOWLEDGE_SOURCE_DIR,
             db_path=KNOWLEDGE_DB_PATH,
             faiss_path=KNOWLEDGE_FAISS_PATH,
+            embedding_manager=self.embedding_manager,
             query_rewriter=self.llm_query_rewriter,
             context_compressor = self.context_compressor,
         )
 
-        self.retrieval_service.initialize()
+    def initialize_resources(self) -> None:
+        """
+        Initialize expensive resources in the background.
+
+        This method should be called after the application
+        has finished starting up.
+        """
+        resources = [
+            ("Model Manager", self.model_manager),
+            ("Embedding Manager", self.embedding_manager),
+            ("Retrieval Service", self.retrieval_service),
+        ]
+
+        for name, resource in resources:
+            task = asyncio.create_task(
+                asyncio.to_thread(resource.initialize)
+            )
+
+            # Define a dynamic callback closure tracking the resource name
+            def make_callback(res_name):
+                def callback(t: asyncio.Task):
+                    try:
+                        print(f"[INIT SUCCESS] {res_name} completed")
+                    except Exception as e:
+                        print(f"[INIT FAILURE] {res_name} failed: {e}")
+                return callback
+
+            task.add_done_callback(make_callback(name))

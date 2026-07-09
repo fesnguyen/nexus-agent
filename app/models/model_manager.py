@@ -1,8 +1,5 @@
-from typing import Type
+from threading import Lock
 
-from pydantic import BaseModel
-
-from app.contracts.agent_decision import AgentDecision
 from app.models.base import BaseLLM
 from app.models.factory import ModelFactory
 from app.tools.registry import ToolRegistry
@@ -12,10 +9,13 @@ class ModelManager:
     """
     Owns the application's active language model.
 
-    Future responsibilities:
-    - Lazy loading
-    - Model switching
-    - Model unloading
+    Responsibilities
+    ----------------
+    - Own the active model.
+    - Load the model.
+    - Provide inference.
+    - (Future) Switch models.
+    - (Future) Unload models.
     """
 
     def __init__(
@@ -29,26 +29,29 @@ class ModelManager:
         self._tool_registry = tool_registry
 
         self._model: BaseLLM | None = None
+        self._lock = Lock()
 
     @property
     def current_model_name(self) -> str:
         return self._model_name
 
-    def invoke(
-            self, 
-            messages,
-            tool: ToolRegistry,
-            response_model: Type[BaseModel] = AgentDecision,
-    ) -> BaseModel:
-        return self._ensure_model().invoke(
-                messages,
-                tool,
-                response_model
-            )
-    
-    def _ensure_model(self) -> BaseLLM:
-        if self._model is None:
-            print(f"Loading model: {self._model_name}")
+    @property
+    def is_loaded(self) -> bool:
+        return self._model is not None
+
+    def initialize(self) -> None:
+        """
+        Load the active model.
+
+        Safe to call multiple times.
+        """
+        if self._model is not None:
+            return
+
+        # Lock method again other call
+        with self._lock:
+            if self._model is not None:
+                return
 
             self._model = ModelFactory.create(
                 self._model_name,
@@ -56,4 +59,11 @@ class ModelManager:
                 tool_registry=self._tool_registry,
             )
 
-        return self._model
+    def invoke(self, *args, **kwargs):
+        """
+        Run inference using the active model.
+        """
+        if self._model is None:
+            self.initialize()
+
+        return self._model.invoke(*args, **kwargs)
