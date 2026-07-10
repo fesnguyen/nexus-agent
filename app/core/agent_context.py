@@ -3,6 +3,7 @@ import asyncio
 from app.memory.conversation.conversation_service import ConversationService
 from app.memory.conversation.conversation_store import ConversationStore
 from app.memory.long_term.extractor import MemoryExtractor
+from app.models.cross_encoder_manager import CrossEncoderManager
 from app.models.model_manager import ModelManager
 from app.models.embedding_manager import EmbeddingManager
 from app.retrieval.processing.embedder import Embedder
@@ -22,13 +23,13 @@ from configs.agent_settings import (
 )
 
 from configs.knowledge_settings import (
-    EMBEDDING_MODEL_NAME,
     KNOWLEDGE_DB_PATH,
     KNOWLEDGE_SOURCE_DIR,
     KNOWLEDGE_FAISS_PATH,
 )
 
 from app.ranking.reranker import MemoryReranker
+from configs.model_settings import CHAT_MODEL
 
 
 class AgentContext:
@@ -41,9 +42,12 @@ class AgentContext:
         # ---------------------------------------------------------
         # Container of all SentenceTransformer models
 
-        # Embedding models manager for memory reranker/faiss store/...
+        # Embedding models manager for memory faiss store
         # and rag embedder/compressor/...
         self.embedding_manager = EmbeddingManager()
+
+        # Cross encoder model for reranker
+        self.cross_encoder_manager = CrossEncoderManager()
 
         self.tool_registry = ToolRegistry(
             register_all_available=True
@@ -52,10 +56,9 @@ class AgentContext:
         # LLM model manager for memory extractor, query rewriter
         self.model_manager = ModelManager(
             backend="Unsloth",
-            model_name="unsloth/Qwen3-4B-Instruct-2507-bnb-4bit",
+            model_name=CHAT_MODEL,
             tool_registry=self.tool_registry,
         )
-
 
         # ---------------------------------------------------------
         # Conversation and Memory
@@ -72,8 +75,8 @@ class AgentContext:
             db_path=AGENT_DB_PATH
         )
 
-        self.memory_reranker = (
-            MemoryReranker()
+        self.memory_reranker = MemoryReranker(
+            self.cross_encoder_manager
         )
 
         self.faiss_store = MemoryFaissStore(
@@ -121,7 +124,7 @@ class AgentContext:
         """
         resources = [
             ("Model Manager", self.model_manager),
-            ("New Embedding Manager", self.embedding_manager),
+            ("Embedding Manager", self.embedding_manager),
             ("Retrieval Service", self.retrieval_service),
         ]
 
