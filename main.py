@@ -53,6 +53,8 @@ async def lifespan(app: FastAPI):
 
     app.state.application = container
 
+    agent_context.initialize_resources()
+
     yield
 
     print()

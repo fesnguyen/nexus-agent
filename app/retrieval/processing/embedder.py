@@ -10,36 +10,26 @@ Responsibilities
 from __future__ import annotations
 
 import numpy as np
-from sentence_transformers import SentenceTransformer
 
+from app.models.base_embedding import BaseEmbedding
+from app.models.embedding_manager import EmbeddingManager
 from app.retrieval.schema import Chunk
+from configs.model_settings import RETRIEVAL_EMBEDDING_MODEL
 
 
-class Embedder:
+class Embedder(BaseEmbedding):
     """
     Generate dense embeddings using Sentence Transformers.
     """
 
     def __init__(
         self,
-        model_name: str = "BAAI/bge-small-en-v1.5",
+        embedding_manager: EmbeddingManager,
     ) -> None:
-
-        self._model_name = model_name
-
-        self._model: SentenceTransformer | None = None
-
-    @property
-    def dimension(self) -> int:
-        """
-        Embedding dimension.
-        """
-
-        return self._get_model().get_embedding_dimension()
-    
-    @property
-    def model_name(self) -> str:
-        return self._model_name
+        super().__init__(
+            embedding_manager,
+            RETRIEVAL_EMBEDDING_MODEL,
+        )
 
     def embed(
         self,
@@ -54,14 +44,12 @@ class Embedder:
                 "No chunks to embed."
             )
 
-        model = self._get_model()
-
         texts = [
             chunk.text
             for chunk in chunks
         ]
 
-        embeddings = model.encode(
+        embeddings = self.encode(
             texts,
             convert_to_numpy=True,
             normalize_embeddings=True,
@@ -80,9 +68,7 @@ class Embedder:
         Generate an embedding for a search query.
         """
 
-        model = self._get_model()
-
-        embedding = model.encode(
+        embedding = self.encode(
             query,
             convert_to_numpy=True,
             normalize_embeddings=True,
@@ -91,22 +77,3 @@ class Embedder:
         return embedding.astype(
             np.float32
         ).reshape(1, -1)
-
-    def _get_model(
-        self,
-    ) -> SentenceTransformer:
-        """
-        Lazily load the embedding model.
-        """
-
-        if self._model is None:
-
-            print(
-                f"[RAG] Loading embedding model: {self._model_name}"
-            )
-
-            self._model = SentenceTransformer(
-                self._model_name
-            )
-
-        return self._model

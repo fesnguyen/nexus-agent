@@ -1,20 +1,22 @@
 from sentence_transformers import CrossEncoder
 
 from app.memory.long_term.models import Memory
+from app.models.base_cross_encoder import BaseCrossEncoder
+from app.models.cross_encoder_manager import CrossEncoderManager
+from configs.model_settings import CROSS_ENCODER_MODEL
 
 
-class MemoryReranker:
+class MemoryReranker(BaseCrossEncoder):
 
     def __init__(
         self,
-        model_name: str = (
-            "cross-encoder/ms-marco-MiniLM-L-6-v2"
-        ),
+        cross_encoder_manager: CrossEncoderManager,
     ) -> None:
-
-        self.model = CrossEncoder(
-            model_name
+        super().__init__(
+            cross_encoder_manager,
+            CROSS_ENCODER_MODEL,
         )
+
 
     def rerank(
         self,
@@ -34,7 +36,7 @@ class MemoryReranker:
             for memory in memories
         ]
 
-        scores = self.model.predict(
+        scores = self.predict(
             pairs
         )
 

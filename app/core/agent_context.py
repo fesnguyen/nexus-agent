@@ -1,7 +1,12 @@
+import asyncio
+
 from app.memory.conversation.conversation_service import ConversationService
 from app.memory.conversation.conversation_store import ConversationStore
-from app.models.factory import ModelFactory
 from app.memory.long_term.extractor import MemoryExtractor
+from app.models.cross_encoder_manager import CrossEncoderManager
+from app.models.model_manager import ModelManager
+from app.models.embedding_manager import EmbeddingManager
+from app.retrieval.processing.embedder import Embedder
 from app.retrieval.processing.embedding_context_compressor import EmbeddingContextCompressor
 from app.retrieval.processing.llm_query_rewriter import LLMQueryRewriter
 from app.retrieval.rag_service import RAGService
@@ -24,6 +29,7 @@ from configs.knowledge_settings import (
 )
 
 from app.ranking.reranker import MemoryReranker
+from configs.model_settings import CHAT_MODEL
 
 
 class AgentContext:
@@ -32,9 +38,31 @@ class AgentContext:
         print("Container initialization start")
 
         # ---------------------------------------------------------
-        # Conversation
+        # LLM and SentenceTransformer models manager
         # ---------------------------------------------------------
+        # Container of all SentenceTransformer models
 
+        # Embedding models manager for memory faiss store
+        # and rag embedder/compressor/...
+        self.embedding_manager = EmbeddingManager()
+
+        # Cross encoder model for reranker
+        self.cross_encoder_manager = CrossEncoderManager()
+
+        self.tool_registry = ToolRegistry(
+            register_all_available=True
+        )
+
+        # LLM model manager for memory extractor, query rewriter
+        self.model_manager = ModelManager(
+            backend="Unsloth",
+            model_name=CHAT_MODEL,
+            tool_registry=self.tool_registry,
+        )
+
+        # ---------------------------------------------------------
+        # Conversation and Memory
+        # ---------------------------------------------------------
         self.conversation_store = ConversationStore(
             db_path=AGENT_DB_PATH,
         )
@@ -43,20 +71,17 @@ class AgentContext:
             store=self.conversation_store,
         )
 
-        self.tool_registry = ToolRegistry(
-            register_all_available=True
-        )
-
         self.memory_store = SQLiteMemoryStore(
             db_path=AGENT_DB_PATH
         )
 
-        self.faiss_store = MemoryFaissStore(
-            index_path=MEMORY_FAISS_PATH,
+        self.memory_reranker = MemoryReranker(
+            self.cross_encoder_manager
         )
 
-        self.memory_reranker = (
-            MemoryReranker()
+        self.faiss_store = MemoryFaissStore(
+            index_path=MEMORY_FAISS_PATH,
+            embedding_manager=self.embedding_manager,
         )
 
         print("memory manager init")
@@ -66,25 +91,55 @@ class AgentContext:
             self.memory_reranker,
         )
 
-        self.model: BaseLLM = ModelFactory.create(
-            "qwen",
-            "unsloth/Qwen3-4B-Instruct-2507-bnb-4bit",
-            tool_registry = self.tool_registry,
-        )
+        self.memory_extractor = MemoryExtractor(self.model_manager)
 
-        self.memory_extractor = MemoryExtractor(self.model)
 
+        # ---------------------------------------------------------
+        # RAG
+        # ---------------------------------------------------------
         # self.heuristic_query_rewriter = HeuristicQueryRewriter()
-        self.llm_query_rewriter = LLMQueryRewriter(self.model)
+        self.embedder = Embedder(self.embedding_manager)
 
-        self.context_compressor = EmbeddingContextCompressor()
+        self.llm_query_rewriter = LLMQueryRewriter(self.model_manager)
+
+        self.context_compressor = EmbeddingContextCompressor(
+            embedding_manager=self.embedding_manager,
+        )
 
         self.retrieval_service = RAGService(
             knowledge_dir=KNOWLEDGE_SOURCE_DIR,
             db_path=KNOWLEDGE_DB_PATH,
             faiss_path=KNOWLEDGE_FAISS_PATH,
+            embedding_manager=self.embedder,
             query_rewriter=self.llm_query_rewriter,
             context_compressor = self.context_compressor,
         )
 
-        self.retrieval_service.initialize()
+    def initialize_resources(self) -> None:
+        """
+        Initialize expensive resources in the background.
+
+        This method should be called after the application
+        has finished starting up.
+        """
+        resources = [
+            ("Model Manager", self.model_manager),
+            ("Embedding Manager", self.embedding_manager),
+            ("Retrieval Service", self.retrieval_service),
+        ]
+
+        for name, resource in resources:
+            task = asyncio.create_task(
+                asyncio.to_thread(resource.initialize)
+            )
+
+            # Define a dynamic callback closure tracking the resource name
+            def make_callback(res_name):
+                def callback(t: asyncio.Task):
+                    try:
+                        print(f"[INIT SUCCESS] {res_name} completed")
+                    except Exception as e:
+                        print(f"[INIT FAILURE] {res_name} failed: {e}")
+                return callback
+
+            task.add_done_callback(make_callback(name))

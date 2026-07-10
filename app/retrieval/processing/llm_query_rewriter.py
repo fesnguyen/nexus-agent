@@ -12,6 +12,7 @@ conversation context and improve retrieval quality.
 from __future__ import annotations
 
 from app.models.base import BaseModel
+from app.models.model_manager import ModelManager
 from app.retrieval.processing.base_query_rewriter import (
     BaseQueryRewriter,
 )
@@ -58,10 +59,10 @@ class LLMQueryRewriter(BaseQueryRewriter):
 
     def __init__(
         self,
-        model: BaseModel,
+        model_manager: ModelManager,
     ) -> None:
 
-        self._model = model
+        self._model_manager = model_manager
 
     def rewrite(
         self,
@@ -79,7 +80,7 @@ class LLMQueryRewriter(BaseQueryRewriter):
             history=history,
         )
 
-        result = self._model.invoke(
+        result = self._model_manager.invoke(
             messages=[
                 SystemMessage(
                     content=system_prompt

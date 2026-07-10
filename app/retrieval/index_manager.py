@@ -23,6 +23,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
+from app.models.embedding_manager import EmbeddingManager
 from app.retrieval.ingestion.loader import Loader
 from app.retrieval.processing.chunker import Chunker
 from app.retrieval.processing.embedder import Embedder
@@ -61,7 +62,7 @@ class IndexManager:
         self,
         loader: Loader,
         chunker: Chunker,
-        embedder: Embedder,
+        embedding_manager: Embedder,
         chunk_store: ChunkStore,
         file_index_store: FileIndexStore,
         mapping_store: MappingStore,
@@ -70,7 +71,7 @@ class IndexManager:
 
         self._loader = loader
         self._chunker = chunker
-        self._embedder = embedder
+        self._embedding_manager = embedding_manager
 
         self._chunk_store = chunk_store
         self._file_index_store = file_index_store
@@ -101,7 +102,7 @@ class IndexManager:
         #
         # Generate embeddings
         #
-        embeddings = self._embedder.embed(
+        embeddings = self._embedding_manager.embed(
             chunks
         )
 
@@ -141,7 +142,7 @@ class IndexManager:
                     content_hash=FileIndexStore.compute_hash(
                         document.source
                     ),
-                    embedding_model=self._embedder._model_name,
+                    embedding_model=self._embedding_manager._model_name,
                     chunk_count=chunk_count,
                 )
             )
@@ -157,7 +158,7 @@ class IndexManager:
                 VectorMapping(
                     chunk_id=chunk.id,
                     vector_store="faiss",
-                    embedding_model=self._embedder._model_name,
+                    embedding_model=self._embedding_manager._model_name,
                     vector_id=vector_id,
                 )
             )

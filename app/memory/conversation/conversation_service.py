@@ -68,9 +68,10 @@ class ConversationService:
         conversation = self.store.get_conversation(
             conversation_id,
         )
-        conversation.messages = self.store.get_chat_messages(
-            conversation_id
-        )
+        if conversation is not None:
+            conversation.messages = self.store.get_chat_messages(
+                conversation_id
+            )
 
         return conversation
 
