@@ -47,8 +47,7 @@ class MemoryFaissStore(BaseEmbedding):
 
         # Get model dimension for faiss initialization
         if self.dimension is None:
-            model = self.get_model()
-            self.dimension = model.get_embedding_dimension()
+            self.dimension = self.embedding_model.get_embedding_dimension()
 
         if self.index_path.exists():
             self.index = faiss.read_index(

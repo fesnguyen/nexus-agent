@@ -21,8 +21,8 @@ class BaseEmbedding(ABC):
 
     @property
     def embedding_model(self) -> SentenceTransformer:
-        return self._cross_encoder_manager.get_model(
-            self._cross_encoder_model,
+        return self._embedding_manager.get_model(
+            self._model_name,
         )
 
     def encode(
