@@ -51,8 +51,8 @@ class AgentContext:
 
         # LLM model manager for memory extractor, query rewriter
         self.model_manager = ModelManager(
-            model_name="qwen",
-            model_path="unsloth/Qwen3-4B-Instruct-2507-bnb-4bit",
+            backend="Unsloth",
+            model_name="unsloth/Qwen3-4B-Instruct-2507-bnb-4bit",
             tool_registry=self.tool_registry,
         )
 

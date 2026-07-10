@@ -11,7 +11,7 @@ from unsloth import FastLanguageModel
 import re
 
 
-class QwenModel(BaseLLM):
+class UnslothModel(BaseLLM):
 
     def __init__(
         self,

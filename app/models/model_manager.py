@@ -20,12 +20,12 @@ class ModelManager:
 
     def __init__(
         self,
+        backend: str,
         model_name: str,
-        model_path: str,
         tool_registry: ToolRegistry,
     ) -> None:
+        self._back_end = backend
         self._model_name = model_name
-        self._model_path = model_path
         self._tool_registry = tool_registry
 
         self._model: BaseLLM | None = None
@@ -50,8 +50,8 @@ class ModelManager:
                 return
 
             self._model = ModelFactory.create(
-                self._model_name,
-                self._model_path,
+                backend=self._back_end,
+                model_name=self._model_name,
                 tool_registry=self._tool_registry,
             )
 

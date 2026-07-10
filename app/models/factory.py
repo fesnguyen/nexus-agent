@@ -1,30 +1,23 @@
-from app.models.qwen import QwenModel
-from app.tools.registry import ToolRegistry
-# from app.models.gemma import GemmaModel
-# from app.models.llama import LlamaModel
+from typing import Literal
+
+from app.models.unsloth_model import UnslothModel
 
 
 class ModelFactory:
 
     @staticmethod
     def create(
-        provider: str,
+        backend: Literal["Unsloth" , "Ollama"],
         model_name: str,
         **kwargs,
     ):
 
-        if provider == "qwen":
-            return QwenModel(
+        if backend == "Unsloth":
+            return UnslothModel(
                     model_name,
                     **kwargs,
                 )
 
-        # if provider == "gemma":
-        #     return GemmaModel(model_name)
-
-        # if provider == "llama":
-        #     return LlamaModel(model_name)
-
         raise ValueError(
-            f"Unknown provider: {provider}"
+            f"Unknown backend: {backend}"
         )
