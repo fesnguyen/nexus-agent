@@ -23,9 +23,10 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from app.retrieval.embedding_manager import EmbeddingManager
+from app.models.embedding_manager import EmbeddingManager
 from app.retrieval.ingestion.loader import Loader
 from app.retrieval.processing.chunker import Chunker
+from app.retrieval.processing.embedder import Embedder
 from app.retrieval.schema import Chunk, Document
 from app.retrieval.storage.chunk_store import ChunkStore
 from app.retrieval.storage.faiss_store import FaissStore
@@ -61,7 +62,7 @@ class IndexManager:
         self,
         loader: Loader,
         chunker: Chunker,
-        embedding_manager: EmbeddingManager,
+        embedding_manager: Embedder,
         chunk_store: ChunkStore,
         file_index_store: FileIndexStore,
         mapping_store: MappingStore,

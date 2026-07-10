@@ -4,7 +4,8 @@ from app.memory.conversation.conversation_service import ConversationService
 from app.memory.conversation.conversation_store import ConversationStore
 from app.memory.long_term.extractor import MemoryExtractor
 from app.models.model_manager import ModelManager
-from app.retrieval.embedding_manager import EmbeddingManager
+from app.models.embedding_manager import EmbeddingManager
+from app.retrieval.processing.embedder import Embedder
 from app.retrieval.processing.embedding_context_compressor import EmbeddingContextCompressor
 from app.retrieval.processing.llm_query_rewriter import LLMQueryRewriter
 from app.retrieval.rag_service import RAGService
@@ -36,9 +37,29 @@ class AgentContext:
         print("Container initialization start")
 
         # ---------------------------------------------------------
-        # Conversation
+        # LLM and SentenceTransformer models manager
         # ---------------------------------------------------------
+        # Container of all SentenceTransformer models
 
+        # Embedding models manager for memory reranker/faiss store/...
+        # and rag embedder/compressor/...
+        self.embedding_manager = EmbeddingManager()
+
+        self.tool_registry = ToolRegistry(
+            register_all_available=True
+        )
+
+        # LLM model manager for memory extractor, query rewriter
+        self.model_manager = ModelManager(
+            model_name="qwen",
+            model_path="unsloth/Qwen3-4B-Instruct-2507-bnb-4bit",
+            tool_registry=self.tool_registry,
+        )
+
+
+        # ---------------------------------------------------------
+        # Conversation and Memory
+        # ---------------------------------------------------------
         self.conversation_store = ConversationStore(
             db_path=AGENT_DB_PATH,
         )
@@ -47,20 +68,17 @@ class AgentContext:
             store=self.conversation_store,
         )
 
-        self.tool_registry = ToolRegistry(
-            register_all_available=True
-        )
-
         self.memory_store = SQLiteMemoryStore(
             db_path=AGENT_DB_PATH
         )
 
-        self.faiss_store = MemoryFaissStore(
-            index_path=MEMORY_FAISS_PATH,
-        )
-
         self.memory_reranker = (
             MemoryReranker()
+        )
+
+        self.faiss_store = MemoryFaissStore(
+            index_path=MEMORY_FAISS_PATH,
+            embedding_manager=self.embedding_manager,
         )
 
         print("memory manager init")
@@ -70,20 +88,16 @@ class AgentContext:
             self.memory_reranker,
         )
 
-        self.model_manager = ModelManager(
-            model_name="qwen",
-            model_path="unsloth/Qwen3-4B-Instruct-2507-bnb-4bit",
-            tool_registry=self.tool_registry,
-        )
-
         self.memory_extractor = MemoryExtractor(self.model_manager)
 
-        # self.heuristic_query_rewriter = HeuristicQueryRewriter()
-        self.llm_query_rewriter = LLMQueryRewriter(self.model_manager)
 
-        self.embedding_manager = EmbeddingManager(
-            model_name=EMBEDDING_MODEL_NAME,
-        )
+        # ---------------------------------------------------------
+        # RAG
+        # ---------------------------------------------------------
+        # self.heuristic_query_rewriter = HeuristicQueryRewriter()
+        self.embedder = Embedder(self.embedding_manager)
+
+        self.llm_query_rewriter = LLMQueryRewriter(self.model_manager)
 
         self.context_compressor = EmbeddingContextCompressor(
             embedding_manager=self.embedding_manager,
@@ -93,7 +107,7 @@ class AgentContext:
             knowledge_dir=KNOWLEDGE_SOURCE_DIR,
             db_path=KNOWLEDGE_DB_PATH,
             faiss_path=KNOWLEDGE_FAISS_PATH,
-            embedding_manager=self.embedding_manager,
+            embedding_manager=self.embedder,
             query_rewriter=self.llm_query_rewriter,
             context_compressor = self.context_compressor,
         )
@@ -107,7 +121,7 @@ class AgentContext:
         """
         resources = [
             ("Model Manager", self.model_manager),
-            ("Embedding Manager", self.embedding_manager),
+            ("New Embedding Manager", self.embedding_manager),
             ("Retrieval Service", self.retrieval_service),
         ]
 

@@ -4,8 +4,12 @@ import faiss
 import numpy as np
 from sentence_transformers import SentenceTransformer
 
+from app.models.base_embedding import BaseEmbedding
+from app.models.embedding_manager import EmbeddingManager
+from configs.model_settings import MEMORY_EMBEDDING_MODEL
 
-class MemoryFaissStore:
+
+class MemoryFaissStore(BaseEmbedding):
     """
     Semantic memory index.
 
@@ -21,40 +25,50 @@ class MemoryFaissStore:
     def __init__(
         self,
         index_path: Path,
-        model_name: str = "intfloat/multilingual-e5-base", # Support multiple languages
+        embedding_manager: EmbeddingManager,
     ) -> None:
+        super().__init__(
+            embedding_manager,
+            MEMORY_EMBEDDING_MODEL,
+        )
 
         self.index_path = index_path
+        self.index = None
+        self.dimension = None
 
-        self.encoder = SentenceTransformer(
-            model_name
-        )
+    def get_index(self):
+        """
+        Get faiss index, if model is not loaded, this wait for loading before return
+        """
 
-        self.dimension = (
-            self.encoder
-            .get_embedding_dimension()
-        )
+        # Return cached index immediately if it's already in memory
+        if self.index is not None:
+            return self.index
+
+        # Get model dimension for faiss initialization
+        if self.dimension is None:
+            model = self.get_model()
+            self.dimension = model.get_embedding_dimension()
 
         if self.index_path.exists():
-
             self.index = faiss.read_index(
                 str(self.index_path)
             )
-
         else:
-
             self.index = faiss.IndexIDMap(
                 faiss.IndexFlatIP(
                     self.dimension
                 )
             )
 
+        return self.index
+
     def embed(
         self,
         text: str,
     ) -> np.ndarray:
 
-        embedding = self.encoder.encode(
+        embedding = self.encode(
             text,
             normalize_embeddings=True,
         )
@@ -74,7 +88,7 @@ class MemoryFaissStore:
             content
         )
 
-        self.index.add_with_ids(
+        self.get_index().add_with_ids(
             vector,
             np.array(
                 [faiss_id],
@@ -88,14 +102,14 @@ class MemoryFaissStore:
         k: int = 10,
     ) -> list[int]:
 
-        if self.index.ntotal == 0:
+        if self.get_index().ntotal == 0:
             return []
 
         query_vector = self.embed(
             query
         )
 
-        scores, ids = self.index.search(
+        scores, ids = self.get_index().search(
             query_vector,
             k,
         )
@@ -110,13 +124,13 @@ class MemoryFaissStore:
         self,
     ) -> None:
 
-        self.index_path.parent.mkdir(
+        self.get_index().parent.mkdir(
             parents=True,
             exist_ok=True,
         )
 
         faiss.write_index(
-            self.index,
+            self.get_index(),
             str(self.index_path),
         )
 
@@ -141,7 +155,7 @@ class MemoryFaissStore:
         for faiss_id, content in items:
 
             vectors.append(
-                self.encoder.encode(
+                self.encode(
                     content,
                     normalize_embeddings=True,
                 )
@@ -161,7 +175,7 @@ class MemoryFaissStore:
             dtype=np.int64,
         )
 
-        self.index.add_with_ids(
+        self.get_index().add_with_ids(
             vectors,
             ids,
         )

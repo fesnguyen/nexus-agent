@@ -22,13 +22,14 @@ from __future__ import annotations
 from pathlib import Path
 from threading import Lock
 
-from app.retrieval.embedding_manager import EmbeddingManager
+from app.models.embedding_manager import EmbeddingManager
 from app.retrieval.index_manager import IndexManager
 from app.retrieval.ingestion.loader import Loader
 from app.retrieval.ingestion.parser import Parser
 from app.retrieval.processing.base_context_compressor import BaseContextCompressor
 from app.retrieval.processing.base_query_rewriter import BaseQueryRewriter
 from app.retrieval.processing.chunker import Chunker
+from app.retrieval.processing.embedder import Embedder
 from app.retrieval.schema import Chunk, Document, SearchResult
 from app.retrieval.storage.chunk_store import ChunkStore
 from app.retrieval.storage.faiss_store import FaissStore
@@ -46,7 +47,7 @@ class RAGService:
         knowledge_dir: Path,
         db_path: Path,
         faiss_path: Path,
-        embedding_manager: EmbeddingManager,
+        embedding_manager: Embedder,
         query_rewriter: BaseQueryRewriter,
         context_compressor: BaseContextCompressor,
         chunk_size: int = 1500,

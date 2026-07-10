@@ -31,22 +31,27 @@ import re
 import numpy as np
 from sentence_transformers import SentenceTransformer
 
-from app.retrieval.embedding_manager import EmbeddingManager
+from app.models.base_embedding import BaseEmbedding
+from app.models.embedding_manager import EmbeddingManager
 from app.retrieval.processing.base_context_compressor import (
     BaseContextCompressor,
 )
 from app.retrieval.schema import SearchResult
+from configs.model_settings import COMPRESSOR_EMBEDDING_MODEL
 
 
-class EmbeddingContextCompressor(BaseContextCompressor):
+class EmbeddingContextCompressor(BaseContextCompressor, BaseEmbedding):
 
     def __init__(
         self,
         embedding_manager: EmbeddingManager,
         top_k_sentences: int = 8,
     ) -> None:
-
-        self._embedding_manager = embedding_manager
+        BaseEmbedding.__init__(
+            self,
+            embedding_manager,
+            COMPRESSOR_EMBEDDING_MODEL,
+        )
 
         self._top_k_sentences = top_k_sentences
 
@@ -70,14 +75,14 @@ class EmbeddingContextCompressor(BaseContextCompressor):
             return ""
 
         # Compute normalized vector embeddings for all extracted sentences
-        sentence_embeddings = self._embedding_manager.encode(
+        sentence_embeddings = self.encode(
             sentences,
             convert_to_numpy=True,
             normalize_embeddings=True,
         )
 
         # Compute a normalized vector embedding for the user's query
-        query_embedding = self._embedding_manager.encode(
+        query_embedding = self.encode(
             query,
             convert_to_numpy=True,
             normalize_embeddings=True,
