@@ -24,10 +24,11 @@ from dataclasses import dataclass
 import numpy as np
 
 from app.models.embedding_manager import EmbeddingManager
+from app.retrieval.ingestion.file_hasher import FileHasher
 from app.retrieval.ingestion.loader import Loader
 from app.retrieval.processing.chunker import Chunker
 from app.retrieval.processing.embedder import Embedder
-from app.retrieval.schema import Chunk, Document
+from app.retrieval.schema import Chunk, Document, SyncPlan
 from app.retrieval.storage.chunk_store import ChunkStore
 from app.retrieval.storage.faiss_store import FaissStore
 from app.retrieval.storage.file_index_store import (
@@ -201,3 +202,60 @@ class IndexManager:
         Temporary check if the faiss store exist
         """
         return self._vector_store.exists()
+    
+    
+    def detect_changes(self) -> SyncPlan:
+        """
+        Compare current files on disk against the indexed metadata store 
+        to compute a delta synchronization plan.
+
+        Returns:
+            SyncPlan: An object containing categorized lists of added, 
+                    modified, and deleted files to reconcile state.
+        """
+        # Load the live state of files currently present in the source directories
+        documents = self._loader.load()
+
+        # Map existing database records by their source path for O(1) lookups
+        indexed = {
+            item.source: item
+            for item in self._file_index_store.get_all()
+        }
+
+        # Map live documents by their absolute file path
+        current = {
+            document.source: document
+            for document in documents
+        }
+
+        added: list[Document] = []
+        modified: list[Document] = []
+        deleted: list[IndexedFile] = []
+
+        # Identify files that are either newly introduced or mutated
+        for path, document in current.items():
+            record = indexed.get(path)
+
+            # Case 1: Path does not exist in index -> File was newly added
+            if record is None:
+                added.append(document)
+                continue
+
+            # Case 2: Path exists, check content state via a fresh cryptographic hash
+            content_hash = FileHasher.sha256(path)
+
+            # If hashes diverge, the contents were modified since the last index run
+            if content_hash != record.content_hash:
+                modified.append(document)
+
+        # Identify files that exist in the index but are no longer present on disk
+        for path, record in indexed.items():
+            # Case 3: Path missing from active disk lookup -> File was deleted
+            if path not in current:
+                deleted.append(record)
+
+        return SyncPlan(
+            added=added,
+            modified=modified,
+            deleted=deleted,
+        )

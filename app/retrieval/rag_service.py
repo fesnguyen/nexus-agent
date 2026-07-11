@@ -133,6 +133,9 @@ class RAGService:
         """
 
         with self._lock:
+            plan = self._index_manager.detect_changes()
+            print(plan)
+
             if self._index_manager.exists():
                 result = self._index_manager.load()
             else:
