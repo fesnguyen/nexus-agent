@@ -1,4 +1,4 @@
-name: nexus-agent-env
+name: nexus-agent
 channels:
   - conda-forge
 dependencies:
