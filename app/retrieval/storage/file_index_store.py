@@ -134,17 +134,6 @@ class FileIndexStore:
 
             connection.commit()
 
-    @staticmethod
-    def compute_hash(
-        path: Path,
-    ) -> str:
-        """
-        Compute SHA256 hash of a file.
-        """
-
-        return hashlib.sha256(
-            path.read_bytes()
-        ).hexdigest()
 
     def _initialize(
         self,
@@ -165,3 +154,33 @@ class FileIndexStore:
             )
 
             connection.commit()
+
+
+    def get_all(self) -> list[IndexedFile]:
+        """
+
+        """
+        with sqlite3.connect(self._database) as connection:
+
+            cursor = connection.execute(
+                """
+                SELECT
+                    source,
+                    content_hash,
+                    embedding_model,
+                    chunk_count
+                FROM indexed_files
+                """
+            )
+
+            rows = cursor.fetchall()
+
+        return [
+            IndexedFile(
+                source=Path(row[0]),
+                content_hash=row[1],
+                embedding_model=row[2],
+                chunk_count=row[3],
+            )
+            for row in rows
+        ]

@@ -20,6 +20,10 @@ class BaseEmbedding(ABC):
         )
 
     @property
+    def model_name(self):
+        return self._model_name
+
+    @property
     def embedding_model(self) -> SentenceTransformer:
         return self._embedding_manager.get_model(
             self._model_name,

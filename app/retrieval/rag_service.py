@@ -47,7 +47,7 @@ class RAGService:
         knowledge_dir: Path,
         db_path: Path,
         faiss_path: Path,
-        embedding_manager: Embedder,
+        embedder: Embedder,
         query_rewriter: BaseQueryRewriter,
         context_compressor: BaseContextCompressor,
         chunk_size: int = 1500,
@@ -81,7 +81,7 @@ class RAGService:
             chunk_overlap=chunk_overlap,
         )
 
-        self._embedding_manager = embedding_manager
+        self._embedding_manager = embedder
 
         #
         # Storage
@@ -104,7 +104,7 @@ class RAGService:
         self._index_manager = IndexManager(
             loader=self._loader,
             chunker=self._chunker,
-            embedding_manager=self._embedding_manager,
+            embedder=self._embedding_manager,
             chunk_store=self._chunk_store,
             file_index_store=self._file_index_store,
             mapping_store=self._mapping_store,
@@ -131,12 +131,12 @@ class RAGService:
         """
         Build the retrieval index.
         """
-
         with self._lock:
-            if self._index_manager.exists():
-                result = self._index_manager.load()
-            else:
-                result = self._index_manager.build()
+            # Synchronize the index with the knowledge source.
+            self._index_manager.sync()
+
+            # Load the latest index into memory.
+            result = self._index_manager.load()
 
             self._documents = result.documents
 

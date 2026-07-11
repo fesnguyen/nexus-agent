@@ -26,6 +26,8 @@ from typing import Any
 
 import numpy as np
 
+from app.retrieval.storage.file_index_store import IndexedFile
+
 
 @dataclass(slots=True)
 class Document:
@@ -83,3 +85,10 @@ class SearchResult:
     chunk: Chunk
 
     score: float
+
+
+@dataclass(slots=True)
+class SyncPlan:
+    added: list[Document]
+    modified: list[Document]
+    deleted: list[IndexedFile]
