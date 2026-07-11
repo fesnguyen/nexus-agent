@@ -4,15 +4,6 @@ Chunk store.
 Responsibilities
 ----------------
 Persist and retrieve chunks.
-
-This class is the source of truth for retrievable content.
-
-It intentionally knows nothing about:
-
-- FAISS
-- Embeddings
-- Similarity search
-- Indexing workflow
 """
 
 from __future__ import annotations
@@ -43,7 +34,7 @@ class ChunkStore:
         chunk: Chunk,
     ) -> None:
         """
-        Insert or replace a chunk.
+        Store a chunk.
         """
 
         with sqlite3.connect(self._database) as connection:
@@ -76,7 +67,7 @@ class ChunkStore:
         chunks: list[Chunk],
     ) -> None:
         """
-        Insert multiple chunks.
+        Store multiple chunks.
         """
 
         with sqlite3.connect(self._database) as connection:
@@ -111,6 +102,9 @@ class ChunkStore:
         self,
         chunk_id: str,
     ) -> Chunk | None:
+        """
+        Return a chunk by its ID.
+        """
 
         with sqlite3.connect(self._database) as connection:
 
@@ -141,9 +135,12 @@ class ChunkStore:
             metadata=json.loads(row[4]),
         )
 
-    def list(
+    def get_all(
         self,
     ) -> list[Chunk]:
+        """
+        Return all stored chunks.
+        """
 
         with sqlite3.connect(self._database) as connection:
 
@@ -173,10 +170,13 @@ class ChunkStore:
             for row in rows
         ]
 
-    def find_by_source(
+    def get_by_source(
         self,
         source: Path,
     ) -> list[Chunk]:
+        """
+        Return all chunks for a source document.
+        """
 
         with sqlite3.connect(self._database) as connection:
 
@@ -212,6 +212,9 @@ class ChunkStore:
         self,
         chunk_id: str,
     ) -> None:
+        """
+        Delete a chunk.
+        """
 
         with sqlite3.connect(self._database) as connection:
 
@@ -229,6 +232,9 @@ class ChunkStore:
         self,
         source: Path,
     ) -> None:
+        """
+        Delete all chunks for a source document.
+        """
 
         with sqlite3.connect(self._database) as connection:
 
@@ -245,6 +251,9 @@ class ChunkStore:
     def clear(
         self,
     ) -> None:
+        """
+        Delete all chunks.
+        """
 
         with sqlite3.connect(self._database) as connection:
 

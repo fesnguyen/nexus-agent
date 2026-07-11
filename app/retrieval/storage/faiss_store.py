@@ -4,7 +4,7 @@ FAISS vector store.
 Responsibilities
 ----------------
 - Build FAISS index.
-- Add vectors.
+- Add/remove vectors.
 - Perform similarity search.
 - Save/load FAISS index.
 
@@ -33,8 +33,9 @@ class FaissStore:
         self,
         index_path: Path,
     ) -> None:
+
         self._index_path = index_path
-        self._index: faiss.Index | None = None
+        self._index: faiss.IndexIDMap2 | None = None
 
     @property
     def size(self) -> int:
@@ -55,7 +56,7 @@ class FaissStore:
 
         if self._index is None:
             raise RuntimeError(
-                "FAISS index has not been built."
+                "FAISS index has not been initialized."
             )
 
         return self._index.d
@@ -63,9 +64,10 @@ class FaissStore:
     def build(
         self,
         embeddings: np.ndarray,
+        vector_ids: np.ndarray,
     ) -> None:
         """
-        Build a new FAISS index.
+        Build a new index from scratch.
         """
 
         if embeddings.ndim != 2:
@@ -73,14 +75,57 @@ class FaissStore:
                 "Embeddings must be a 2D array."
             )
 
+        if len(embeddings) != len(vector_ids):
+            raise ValueError(
+                "Embeddings and vector IDs must have the same length."
+            )
+
         dimension = embeddings.shape[1]
 
-        self._index = faiss.IndexFlatIP(
-            dimension
+        # Underlying vector "IDMap2" wrap the search "FlatID"
+        self._index = faiss.IndexIDMap2(
+            faiss.IndexFlatIP(dimension) # Nearest-neighbor search
         )
 
-        self._index.add(
-            embeddings
+        self.add(
+            embeddings=embeddings,
+            vector_ids=vector_ids,
+        )
+
+    def add(
+        self,
+        embeddings: np.ndarray,
+        vector_ids: np.ndarray,
+    ) -> None:
+        """
+        Add vectors to the index.
+        """
+
+        if self._index is None:
+            raise RuntimeError(
+                "FAISS index has not been initialized."
+            )
+
+        self._index.add_with_ids(
+            embeddings,
+            vector_ids.astype(np.int64),
+        )
+
+    def remove(
+        self,
+        vector_ids: np.ndarray,
+    ) -> None:
+        """
+        Remove vectors from the index.
+        """
+
+        if self._index is None:
+            raise RuntimeError(
+                "FAISS index has not been initialized."
+            )
+
+        self._index.remove_ids(
+            vector_ids.astype(np.int64),
         )
 
     def search(
@@ -94,12 +139,15 @@ class FaissStore:
         Returns
         -------
         scores
+            Similarity scores.
+
         indices
+            Matching vector IDs.
         """
 
         if self._index is None:
             raise RuntimeError(
-                "FAISS index has not been built."
+                "FAISS index has not been initialized."
             )
 
         return self._index.search(
@@ -111,7 +159,7 @@ class FaissStore:
         self,
     ) -> None:
         """
-        Save the index.
+        Persist the index to disk.
         """
 
         if self._index is None:
@@ -128,12 +176,18 @@ class FaissStore:
         self,
     ) -> None:
         """
-        Load an existing FAISS index.
+        Load an existing index.
         """
 
         self._index = faiss.read_index(
             str(self._index_path),
         )
 
-    def exists(self) -> bool:
+    def exists(
+        self,
+    ) -> bool:
+        """
+        Return whether the index exists on disk.
+        """
+
         return self._index_path.exists()

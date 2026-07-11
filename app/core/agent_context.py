@@ -110,7 +110,7 @@ class AgentContext:
             knowledge_dir=KNOWLEDGE_SOURCE_DIR,
             db_path=KNOWLEDGE_DB_PATH,
             faiss_path=KNOWLEDGE_FAISS_PATH,
-            embedding_manager=self.embedder,
+            embedder=self.embedder,
             query_rewriter=self.llm_query_rewriter,
             context_compressor = self.context_compressor,
         )
