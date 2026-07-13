@@ -348,6 +348,35 @@ Current capabilities:
 
 ---
 
+# Multimodaling design (In progress)
+
+
+                Image
+                  │
+                  ▼
+            Vision Service
+                  │
+     ┌────────────┼─────────────┐
+     │            │             │
+     ▼            ▼             ▼
+ Captioner      OCR        Embedding
+     │            │             │
+     └────────────┼─────────────┘
+                  │
+      (Optional on demand)
+          ▼               ▼
+     Detector        Segmentation
+                  │
+                  ▼
+        Unified Structured JSON
+                  │
+                  ▼
+         LangGraph Agent / RAG
+
+---
+
+---
+
 # Running the Project
 
 Create the Conda environment:
@@ -426,7 +455,7 @@ npm run dev
 
 ## 🚧 In Progress
 
-- Multimodal (VLM) Brain
+- Progressive Multimodal Pipeline (In Progress)
 - Multiple tool calls (simultaneously)
 - Docker deployment
 

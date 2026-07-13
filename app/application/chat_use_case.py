@@ -3,9 +3,16 @@ Chat service.
 """
 
 from __future__ import annotations
+import os
+import shutil
+import uuid
+
+from fastapi import File, UploadFile
 
 from app.api.schemas.conversation import Conversation
 from app.memory.conversation.conversation_service import ConversationService
+from app.utils import extract_user_message
+from configs.agent_settings import CHAT_IMAGES_DIR
 
 
 class ChatUseCase:
@@ -20,12 +27,14 @@ class ChatUseCase:
     ):
         self.workflow = workflow
         self.conversation_service = conversation_service
+        os.makedirs(CHAT_IMAGES_DIR, exist_ok=True)
 
     def chat(
         self,
         conversation_id: str,
         message: str,
-    ) -> str:
+        attachments: list[UploadFile] = File([]),
+    ) -> tuple[str, list[str]]:
         """
         Process a single chat message.
         """
@@ -42,11 +51,18 @@ class ChatUseCase:
                 title=message[:40] if message else "New Conversation",
             )
 
+        image_urls = []
+        if attachments:
+            for attachment in attachments:
+                if attachment.content_type and attachment.content_type.startswith("image/"):
+                    img_url = self.save_image_attachment(attachment)
+                    image_urls.append(img_url)
 
         # Persist user message here since user message belong to service, not agent
         self.conversation_service.save_user_message(
             conversation_id=conversation_id,
             content=message,
+            image_urls=image_urls
         )
 
         # Load complete history
@@ -58,21 +74,22 @@ class ChatUseCase:
             # conversation_id will be a mark of appending handle message to db
             "conversation_id": conversation_id,
             "messages": history,
-            "images": None,
         }
 
         # Invoke workflow
-        final_state = self.workflow.invoke(state)
+        assistant_response = self.workflow.invoke(state)
 
-        return final_state["messages"][-1].content
+        return assistant_response["messages"][-1].content
     
-    def getConversations(self,) -> list[Conversation]:
-        """
-        Get conversation list
-        """
 
-        conversations = self.conversation_service.list_conversations()
-
+    def save_image_attachment(self, file: UploadFile) -> str:
+        """Saves the image locally and returns the relative path/URL."""
+        # Generate a unique filename to prevent collisions
+        ext = os.path.splitext(file.filename)[1] or ".png"
+        unique_filename = f"{uuid.uuid4()}{ext}"
+        file_path = os.path.join(CHAT_IMAGES_DIR, unique_filename)
         
-
-        
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+            
+        return file_path

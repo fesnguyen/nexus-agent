@@ -5,6 +5,7 @@ Contains the implementation details of the agent node.
 """
 
 from __future__ import annotations
+import json
 
 from langchain_core.messages import (
     AIMessage,
@@ -16,6 +17,7 @@ from app.contracts.agent_decision import AgentDecision
 from app.core.app import agent_context
 from app.graph.state import State
 from app.prompt.system_prompts import SYSTEM_PROMPT
+from app.utils import extract_user_message
 
 
 def get_user_query(
@@ -25,13 +27,13 @@ def get_user_query(
     Return the latest user query from the conversation.
     It's the lastest HumanMessage
     """
-
+    user_query = ""
     for message in reversed(state["messages"]):
 
         if isinstance(message, HumanMessage):
-            return message.content
+            user_query, _ = extract_user_message(message.content)
 
-    return ""
+    return user_query
 
 
 def retrieve_contexts(
@@ -45,6 +47,10 @@ def retrieve_contexts(
     """
 
     user_query = get_user_query(state)
+
+    # Temporarily ignore incase only text
+    if user_query == "":
+        return ("", "")
 
     #
     # Short queries usually don't benefit from retrieval.

@@ -10,7 +10,7 @@ class ToolCall(BaseModel):
     Request to execute a tool.
     """
 
-    name: str = Field(
+    name: str | None = Field(
         description="Tool name registered in tool registry."
     )
 

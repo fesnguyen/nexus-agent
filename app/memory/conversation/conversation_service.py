@@ -103,13 +103,26 @@ class ConversationService:
         self,
         conversation_id: str,
         content: str,
-    ) -> None:
+        image_urls: list[str] = None,
+    ) -> None: 
+        # Always have content, even it's empty
+        content_list = [{"type": "text", "text": content}]
+
+        # Append image blocks if urls are provided
+        if image_urls:
+            for url in image_urls:
+                content_list.append({
+                    "type": "image_url",
+                    "image_url": {"url": url}
+                })
+
+        db_content = json.dumps(content_list)
 
         self._append_message(
             conversation_id=conversation_id,
             role="user",
             type="chat",
-            content=content,
+            content=db_content,
         )
 
     def save_tool_call(
@@ -199,9 +212,14 @@ class ConversationService:
                     )
 
                 case ("user", _):
+                    # Expect the content format in db is
+                    # "[{"type": "text", "text": "<user request>"},
+                    # {"type"" "image_url", "url": "<image url>"},{...}...]"
+                    vlm_content = json.loads(row["content"])
+                    
                     history.append(
                         HumanMessage(
-                            content=row["content"],
+                            content=vlm_content,
                         )
                     )
 

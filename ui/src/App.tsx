@@ -7,6 +7,7 @@ import { MOCK_MODELS, NAV_ITEMS } from "./constants/nav.js";
 import { api } from "./api/client.js";
 import { ChatRequest } from "./types/chat.js";
 import { Conversation } from "./types/conversation.js"
+import { compressImage } from "./utils/image_utils.js";
 
 function newConversation() {
   const id = crypto.randomUUID();
@@ -144,12 +145,24 @@ export default function App() {
 
     setSending(true);
     try {
-      // Construct the explicit payload payload matching ChatRequest
-      const payload: ChatRequest = {
-        conversationId: convId,
-        toggles,
-        message: text, 
-      };
+      // Construct the explicit payload
+      const payload = new FormData();
+      
+      // Append your standard string/text data values
+      payload.append("conversationId", convId); // Make sure this matches your backend field casing!
+      payload.append("message", text);
+      
+      if (toggles) {
+          payload.append("toggles", JSON.stringify(toggles));
+      }
+
+      for (const item of attachments) {
+        if (item.file) {
+          const compress_image = await compressImage(item.file);
+          const cleanName = item.name.substring(0, item.name.lastIndexOf('.')) + '.webp';
+          payload.append("attachments", compress_image, cleanName);
+        }
+      }
 
       const res = await api.sendMessage(payload);
 
@@ -174,7 +187,7 @@ export default function App() {
             id: crypto.randomUUID(),
             role: "assistant",
             content:
-              "Couldn't reach the backend at 127.0.0.1:8000/chat. This is a placeholder route — wire it to your workflow endpoint in api/client.js.",
+              "Error handling user request!",
           },
         ],
       }));

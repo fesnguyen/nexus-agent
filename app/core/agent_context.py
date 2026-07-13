@@ -29,7 +29,7 @@ from configs.knowledge_settings import (
 )
 
 from app.ranking.reranker import MemoryReranker
-from configs.model_settings import CHAT_MODEL
+from configs.model_settings import CHAT_LLM, CHAT_VLM
 
 
 class AgentContext:
@@ -55,8 +55,8 @@ class AgentContext:
 
         # LLM model manager for memory extractor, query rewriter
         self.model_manager = ModelManager(
-            backend="Unsloth",
-            model_name=CHAT_MODEL,
+            backend="UnslothVision",
+            model_name=CHAT_VLM,
             tool_registry=self.tool_registry,
         )
 
@@ -126,6 +126,7 @@ class AgentContext:
             ("Model Manager", self.model_manager),
             ("Embedding Manager", self.embedding_manager),
             ("Retrieval Service", self.retrieval_service),
+            ("Cross Encoder Manager", self.cross_encoder_manager)
         ]
 
         for name, resource in resources:

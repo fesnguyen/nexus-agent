@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 import os
 
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 
 from app.application.chat_use_case import ChatUseCase
 from app.application.conversation_use_case import ConversationUseCase
@@ -14,6 +15,8 @@ from langchain_core.messages import HumanMessage
 from app.api.routes.chat import router as chat_router
 from app.api.routes.conversation import router as conversation_router
 from fastapi.middleware.cors import CORSMiddleware
+
+from configs.agent_settings import CHAT_IMAGES_DIR
 
 # ============================================================
 # Application Lifecycle
@@ -96,6 +99,12 @@ app.add_middleware(
     allow_methods=["GET", "POST", "OPTIONS", "DELETE", "PUT"], # Explicitly list methods instead of "*"
     allow_headers=["Content-Type", "Authorization"],           # Explicitly list accepted headers
 )
+
+# Ensure the directory exists
+os.makedirs(CHAT_IMAGES_DIR, exist_ok=True)
+
+# Mount the folder to the /images URL path
+app.mount("/images", StaticFiles(directory=CHAT_IMAGES_DIR), name="chat_images")
 
 app.include_router(chat_router)
 app.include_router(conversation_router)

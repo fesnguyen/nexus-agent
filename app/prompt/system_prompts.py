@@ -16,16 +16,7 @@ Schema:
   ]
 }
 
-Rules:
-
-- "thought" is a concise thought for every request describing the current reasoning or next action.
-- Old thoughts are ignored.
-- "response" contains the final answer to the user.
-- "tool_calls" contains the list of tools to execute.
-- All fields are required, all keys "thought", "response" and "tool_calls" must be included even 
-if "response" is empty or "tool_calls" has no element.
-- If not calling a tool, "tool_calls" must be empty. Otherwise, "response" must be an empty string, and vice versa.
-- Example return:
+Example return:
 
 {
   "thought": "The question requires current information, so I should search the web.",
@@ -46,6 +37,14 @@ if "response" is empty or "tool_calls" has no element.
   "tool_calls": []
 }
 
+Rules:
+
+- "thought" is a concise thought for every request describing the current reasoning or next action.
+- Old thoughts are ignored.
+- "response" contains the final answer to the user.
+- "tool_calls" contains the list of tools to execute.
+- All fields in the schema are required.
+- If not calling a tool, "tool_calls" must be empty. Otherwise, "response" must be an empty string.
 - Output valid JSON only. Do not include markdown, code fences, explanations, or any text outside the JSON object.
 """
 

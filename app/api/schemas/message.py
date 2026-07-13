@@ -9,5 +9,5 @@ class Message(BaseSchema):
     id: int
     role: Literal["system", "user", "assistant"]
     type: str
-    content: str
+    content: str | None
     created_at: datetime
