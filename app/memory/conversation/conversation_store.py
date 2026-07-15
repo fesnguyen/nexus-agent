@@ -4,6 +4,7 @@ Conversation SQLite repository.
 
 from __future__ import annotations
 
+from app.api.schemas.attachment import Attachment
 from app.memory.conversation.conversation_schemas import Message
 import sqlite3
 from pathlib import Path
@@ -40,6 +41,28 @@ CREATE TABLE IF NOT EXISTS messages (
 
     FOREIGN KEY (conversation_id)
         REFERENCES conversations(id)
+        ON DELETE CASCADE
+);
+"""
+
+CREATE_ATTACHMENTS_TABLE = """
+CREATE TABLE IF NOT EXISTS attachments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+    message_id INTEGER NOT NULL,
+
+    type TEXT NOT NULL,
+
+    storage_path TEXT NOT NULL,
+
+    mime_type TEXT NOT NULL,
+
+    extracted_content TEXT NOT NULL,
+
+    created_at TIMESTAMP NOT NULL,
+
+    FOREIGN KEY (message_id)
+        REFERENCES messages(id)
         ON DELETE CASCADE
 );
 """
@@ -136,6 +159,10 @@ class ConversationStore:
 
             connection.execute(
                 CREATE_MESSAGES_TABLE
+            )
+
+            connection.execute(
+                CREATE_ATTACHMENTS_TABLE
             )
 
             connection.execute(
@@ -276,11 +303,11 @@ class ConversationStore:
         type: str,
         content: str,
         created_at: str,
-    ) -> None:
+    ) -> int:
 
         with self._connect() as connection:
 
-            connection.execute(
+            cursor = connection.execute(
                 """
                 INSERT INTO messages (
                     conversation_id,
@@ -301,6 +328,48 @@ class ConversationStore:
             )
 
             connection.commit()
+
+            return cursor.lastrowid
+        
+    
+    def append_attachments(
+        self,
+        message_id: int,
+        attachments: list[Attachment],
+    ) -> None:
+        """
+        Persist attachments belonging to a message.
+        """
+
+        with self._connect() as connection:
+
+            connection.executemany(
+                """
+                INSERT INTO attachments (
+                    message_id,
+                    type,
+                    storage_path,
+                    mime_type,
+                    extracted_content,
+                    created_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                [
+                    (
+                        message_id,
+                        attachment["type"],
+                        attachment["storage_path"],
+                        attachment["mime_type"],
+                        attachment["extracted_content"],
+                        attachment["created_at"],
+                    )
+                    for attachment in attachments
+                ],
+            )
+
+            connection.commit()
+
 
     def get_messages(
         self,

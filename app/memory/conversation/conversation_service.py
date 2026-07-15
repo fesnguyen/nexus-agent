@@ -15,6 +15,7 @@ from langchain_core.messages import (
     ToolMessage,
 )
 
+from app.api.schemas.attachment import Attachment
 from app.memory.conversation.conversation_store import ConversationStore
 
 
@@ -103,26 +104,24 @@ class ConversationService:
         self,
         conversation_id: str,
         content: str,
-        image_urls: list[str] = None,
-    ) -> None: 
-        # Always have content, even it's empty
-        content_list = [{"type": "text", "text": content}]
+        attachments: list[Attachment] | None = None
+    ) -> None:
+        """
+        Persist a user message.
 
-        # Append image blocks if urls are provided
-        if image_urls:
-            for url in image_urls:
-                content_list.append({
-                    "type": "image_url",
-                    "image_url": {"url": url}
-                })
+        Attachments are stored separately in the attachments table.
+        """
 
-        db_content = json.dumps(content_list)
-
-        self._append_message(
+        message_id = self._append_message(
             conversation_id=conversation_id,
             role="user",
             type="chat",
-            content=db_content,
+            content=content,
+        )
+
+        self.store.append_attachments(
+            message_id=message_id,
+            attachments=attachments,
         )
 
     def save_tool_call(
@@ -170,9 +169,9 @@ class ConversationService:
         role: str,
         type: str,
         content: str,
-    ) -> None:
+    ) -> int:
 
-        self.store.append_message(
+        return self.store.append_message(
             conversation_id=conversation_id,
             role=role,
             type=type,

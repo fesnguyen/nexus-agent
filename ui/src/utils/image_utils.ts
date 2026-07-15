@@ -1,31 +1,51 @@
-import imageCompression from 'browser-image-compression';
+import imageCompression from "browser-image-compression";
 
 /**
- * Compresses an image file on the client side and converts it to WebP format.
- * @param file The original File object from the file input.
- * @returns A promise that resolves to the compressed File object.
+ * Resize an image before uploading to the backend.
  */
-export const compressImage = async (file: File): Promise<File> => {
+export const compressImage = async (
+  file: File,
+): Promise<File> => {
   const options = {
-    maxSizeMB: 1,            // Target file size limit (1MB)
-    maxWidthOrHeight: 256,  // Max dimension limit (scales down proportionally)
-    useWebWorker: true,      // Processes in background thread to avoid UI freezing
-    fileType: 'image/webp',  // Highly efficient modern image format
+    // Resize only when necessary.
+    maxWidthOrHeight: 1344,
+
+    // Keep original image type.
+    fileType: file.type,
+
+    // High quality.
+    initialQuality: 0.95,
+
+    // Avoid unnecessary compression.
+    maxSizeMB: 5,
+
+    // Run in a worker.
+    useWebWorker: true,
+
+    // Preserve metadata if available.
+    preserveExif: true,
   };
 
   try {
-    // 1. Perform the compression to a Blob
-    const compressedBlob = await imageCompression(file, options);
-    
-    // 2. Extract filename without original extension
-    const fileNameWithoutExt = file.name.substring(0, file.name.lastIndexOf('.'));
-    
-    // 3. Rebuild a clean File object
-    return new File([compressedBlob], `${fileNameWithoutExt}.webp`, {
-      type: 'image/webp',
-    });
+    const compressedFile = await imageCompression(
+      file,
+      options,
+    );
+
+    return new File(
+      [compressedFile],
+      file.name,
+      {
+        type: compressedFile.type,
+        lastModified: Date.now(),
+      },
+    );
   } catch (error) {
-    console.error('Error during image compression:', error);
+    console.error(
+      "Failed to preprocess image:",
+      error,
+    );
+
     throw error;
   }
 };

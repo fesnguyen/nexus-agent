@@ -3,7 +3,11 @@ Chat service.
 """
 
 from __future__ import annotations
+from dataclasses import asdict
+from datetime import UTC, datetime
+import json
 import os
+from pathlib import Path
 import shutil
 import uuid
 
@@ -12,6 +16,7 @@ from fastapi import File, UploadFile
 from app.api.schemas.conversation import Conversation
 from app.memory.conversation.conversation_service import ConversationService
 from app.utils import extract_user_message
+from app.vision.vision_service import VisionService
 from configs.agent_settings import CHAT_IMAGES_DIR
 
 
@@ -24,9 +29,11 @@ class ChatUseCase:
         self,
         workflow,
         conversation_service: ConversationService,
+        vision_service: VisionService,
     ):
         self.workflow = workflow
         self.conversation_service = conversation_service
+        self.vision_service = vision_service
         os.makedirs(CHAT_IMAGES_DIR, exist_ok=True)
 
     def chat(
@@ -51,20 +58,31 @@ class ChatUseCase:
                 title=message[:40] if message else "New Conversation",
             )
 
-        image_urls = []
+        image_attachments = []
         if attachments:
             for attachment in attachments:
                 if attachment.content_type and attachment.content_type.startswith("image/"):
-                    img_url = self.save_image_attachment(attachment)
-                    image_urls.append(img_url)
+                    storage_path = self.save_image_attachment(attachment)
 
-        
+                    extraction = self.vision_service.extract(
+                        image_path=Path(storage_path),
+                    )
+
+                    image_attachments.append(
+                        {
+                            "type": "image",
+                            "storage_path": storage_path,
+                            "mime_type": attachment.content_type,
+                            "extracted_content": json.dumps(asdict(extraction)),
+                            "created_at": datetime.now(UTC).isoformat()
+                        }
+                    )
 
         # Persist user message here since user message belong to service, not agent
         self.conversation_service.save_user_message(
             conversation_id=conversation_id,
             content=message,
-            image_urls=image_urls
+            attachments=image_attachments,
         )
 
         # Load complete history

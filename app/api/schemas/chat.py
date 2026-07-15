@@ -38,11 +38,3 @@ class ChatRequest(BaseModel):
 
 class ChatResponse(BaseSchema):
     content: str
-
-
-@dataclass
-class Attachment:
-    id: str
-    filename: str
-    mime_type: str
-    path: Path

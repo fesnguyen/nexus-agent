@@ -45,6 +45,7 @@ async def lifespan(app: FastAPI):
     chat_use_case = ChatUseCase(
         workflow=workflow,
         conversation_service=agent_context.conversation_service,
+        vision_service=agent_context.vision_service,
     )
     conversation_use_case = ConversationUseCase(
         conversation_service=agent_context.conversation_service,
