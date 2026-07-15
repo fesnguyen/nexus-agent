@@ -17,9 +17,13 @@ from app.models.base import BaseLLM
 from app.tools.registry import ToolRegistry
 # from app.retrieval.processing.heuristic_query_rewriter import HeuristicQueryRewriter
 
+from app.vision.capability.vision_captioner import VisionCaptioner
+from app.vision.vision_service import VisionService
+from app.vision.vision_worker_manager import VisionWorkerManager
 from configs.agent_settings import (
     AGENT_DB_PATH,
     MEMORY_FAISS_PATH,
+    CHAT_IMAGES_DIR,
 )
 
 from configs.knowledge_settings import (
@@ -59,6 +63,26 @@ class AgentContext:
             model_name=CHAT_VLM,
             tool_registry=self.tool_registry,
         )
+
+        # ---------------------------------------------------------
+        # Vision process pipeline
+        # ---------------------------------------------------------
+        self.vision_worker_manager = VisionWorkerManager()
+
+        self.vision_captioner = VisionCaptioner(
+            worker_manager=self.vision_worker_manager,
+        )
+
+        self.vision_service = VisionService(
+            captioner=self.vision_captioner,
+            # text_extractor=self.vision_text_extractor,
+            # embedder=self.vision_embedder,
+        )
+
+        # For testing purpose only, uncomment to test vision process pipeline
+        self.vision_worker_manager.initialize()
+        print(self.vision_service.extract(CHAT_IMAGES_DIR / "b33c8d44c4a7b4e14f2ed8f7dc6837b7.jpg"))
+
 
         # ---------------------------------------------------------
         # Conversation and Memory

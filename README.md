@@ -350,28 +350,33 @@ Current capabilities:
 
 # Multimodaling design (In progress)
 
-
-                Image
-                  │
-                  ▼
-            Vision Service
-                  │
-     ┌────────────┼─────────────┐
-     │            │             │
-     ▼            ▼             ▼
- Captioner      OCR        Embedding
-     │            │             │
-     └────────────┼─────────────┘
-                  │
-      (Optional on demand)
-          ▼               ▼
-     Detector        Segmentation
-                  │
-                  ▼
-        Unified Structured JSON
-                  │
-                  ▼
-         LangGraph Agent / RAG
+vision_pipeline_settings.py
+        │
+        ▼
+VisionWorkerManager
+        │
+   (Factory + Singleton)
+        │
+        ▼
+BaseVisionWorker
+        ▲
+        │
+ ┌──────┼────────────┐
+ │      │            │
+ ▼      ▼            ▼
+Florence MiniCPM PaddleOCR
+        ▲
+        │
+BaseVisionCapability
+        ▲
+        │
+ ┌──────┼──────────────┐
+ │      │              │
+ ▼      ▼              ▼
+Caption OCR        Embedding
+        ▲
+        │
+ VisionService
 
 ---
 
@@ -406,6 +411,9 @@ npm install
 
 npm run dev
 ```
+
+## Running issues:
+Check the file known_issues.md
 
 ---
 

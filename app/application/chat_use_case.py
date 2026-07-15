@@ -58,6 +58,8 @@ class ChatUseCase:
                     img_url = self.save_image_attachment(attachment)
                     image_urls.append(img_url)
 
+        
+
         # Persist user message here since user message belong to service, not agent
         self.conversation_service.save_user_message(
             conversation_id=conversation_id,
