@@ -59,8 +59,8 @@ class AgentContext:
 
         # LLM model manager for memory extractor, query rewriter
         self.model_manager = ModelManager(
-            backend="UnslothVision",
-            model_name=CHAT_VLM,
+            backend="Unsloth",
+            model_name=CHAT_LLM,
             tool_registry=self.tool_registry,
         )
 
@@ -80,8 +80,8 @@ class AgentContext:
         )
 
         # For testing purpose only, uncomment to test vision process pipeline
-        self.vision_worker_manager.initialize()
-        print(self.vision_service.extract(CHAT_IMAGES_DIR / "b33c8d44c4a7b4e14f2ed8f7dc6837b7.jpg"))
+        # self.vision_worker_manager.initialize()
+        # print(self.vision_service.extract(CHAT_IMAGES_DIR / "b33c8d44c4a7b4e14f2ed8f7dc6837b7.jpg"))
 
 
         # ---------------------------------------------------------
@@ -148,6 +148,7 @@ class AgentContext:
         """
         resources = [
             ("Model Manager", self.model_manager),
+            ("Vision process pipeline", self.vision_worker_manager),
             ("Embedding Manager", self.embedding_manager),
             ("Retrieval Service", self.retrieval_service),
             ("Cross Encoder Manager", self.cross_encoder_manager)

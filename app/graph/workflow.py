@@ -3,8 +3,8 @@ from langgraph.graph import START
 from langgraph.graph import StateGraph
 from langchain_core.messages import AIMessage
 
-from app.graph.nodes.agent import agent_node
-from app.graph.nodes.tool import tool_node
+from app.graph.nodes.agent_node import agent_node
+from app.graph.nodes.tool_node import tool_node
 from app.graph.state import State
 
 

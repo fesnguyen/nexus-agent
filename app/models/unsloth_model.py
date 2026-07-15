@@ -137,6 +137,7 @@ class UnslothModel(BaseLLM):
             pad_token_id=self.tokenizer.eos_token_id, # Prevent annoying warnings
         )
 
+        # Slice the sequence to isolate newly predicted response tokens
         generated_tokens = outputs[
             0,
             inputs["input_ids"].shape[1]:,
