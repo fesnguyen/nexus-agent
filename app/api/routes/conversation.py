@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Request
 
-from app.api.schemas.conversation import (
+from app.api.schemas.api_conversation_schema import (
     ConversationResponse,
     ConversationsResponse,
 )

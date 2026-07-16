@@ -17,11 +17,17 @@ class AgentDecision(BaseModel):
         "extra": "forbid"
     }
 
-    thought: str
+    thought: Optional[str] = Field(
+        default=None,
+        description="The internal reasoning or chain of thought before taking an action.",
+    )
 
-    response: str
+    response: Optional[str] = Field(
+        default=None,
+        description="Final answer or response to the user query.",
+    )
 
-    tool_calls: list[ToolCall] = Field(
-        default_factory=list,
+    tool_calls: Optional[list[ToolCall]] = Field(
+        default_factory=[],
         description="Tools to execute before generating a final answer."
     )

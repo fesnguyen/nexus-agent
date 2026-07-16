@@ -3,7 +3,7 @@ from typing import TypedDict
 
 from langgraph.graph.message import add_messages
 
-from app.memory.conversation.conversation_schemas import Attachment
+from app.memory.conversation.application_conversation_schemas import Attachment
 
 
 class State(TypedDict, total=False):

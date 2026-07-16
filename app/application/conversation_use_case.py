@@ -5,7 +5,8 @@ Conversation service.
 from __future__ import annotations
 import dataclasses
 
-from app.api.schemas.conversation import (
+# use_case only access to api schemas, not application schemas
+from app.api.schemas.api_conversation_schema import (
     Conversation,
     ConversationResponse,
     ConversationsResponse,
@@ -30,7 +31,7 @@ class ConversationUseCase:
 
     def get_conversations(self) -> ConversationsResponse:
         """
-        Return all conversations together with the active conversation.
+        Return all conversations together with the active conversation' messages.
 
         This endpoint is used when the application starts so the frontend
         can initialize both the sidebar and chat view with a single request.
@@ -70,7 +71,9 @@ class ConversationUseCase:
         conversation_id: str,
     ) -> ConversationResponse:
         """
-        Return a conversation and all of its messages.
+        Return a single conversation with its messages.
+
+        Used when use swap conversation
         """
 
         conversation = self._conversation_service.get_conversation(

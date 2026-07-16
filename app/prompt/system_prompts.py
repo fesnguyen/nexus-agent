@@ -41,7 +41,7 @@ Rules:
 
 - "thought" is a concise thought for every request describing the current reasoning or next action.
 - Old thoughts are ignored.
-- "response" contains the final answer to the user.
+- "response" contains the final answer or a clarify question to the user if context isn't clear.
 - "tool_calls" contains the list of tools to execute.
 - All fields in the schema are required.
 - If not calling a tool, "tool_calls" must be empty. Otherwise, "response" must be an empty string.

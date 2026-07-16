@@ -4,7 +4,7 @@ from typing import Type
 from pydantic import BaseModel, Field
 
 from app.contracts.agent_decision import AgentDecision
-from app.memory.conversation.conversation_schemas import Attachment
+from app.memory.conversation.application_conversation_schemas import Attachment
 from app.models.base import BaseLLM
 from app.tools.registry import ToolRegistry
 
@@ -20,8 +20,8 @@ class UnslothModel(BaseLLM):
         **kwargs,
     ):
         self.model_name = model_name
-        self.max_new_tokens = kwargs.get("max_new_tokens", 512)
-        self.max_seq_length = kwargs.get("max_seq_length", self.max_new_tokens * 16)
+        self.max_new_tokens = kwargs.get("max_new_tokens", 1024)
+        self.max_seq_length = kwargs.get("max_seq_length", self.max_new_tokens * 8)
         self.temperature = kwargs.get("temperature", 0.0)
         self.max_retries = kwargs.get("max_retries", 3)
 

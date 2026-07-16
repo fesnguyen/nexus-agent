@@ -4,15 +4,16 @@ Conversation SQLite repository.
 
 from __future__ import annotations
 
-from app.memory.conversation.conversation_schemas import Attachment
-from app.memory.conversation.conversation_schemas import Message
+from app.memory.conversation.application_conversation_schemas import (
+    Attachment,
+    Message,
+    Conversation,
+)
 import sqlite3
 from pathlib import Path
 from typing import TypeVar
 
 from pydantic import TypeAdapter
-
-from app.api.schemas.conversation import Conversation, ConversationSummary
 
 
 CREATE_CONVERSATIONS_TABLE = """
@@ -127,14 +128,6 @@ class ConversationStore:
 
         self._initialize()
 
-        self._conversation_summary_adapter = TypeAdapter(
-            list[ConversationSummary]
-        )
-
-        self._message_adapter = TypeAdapter(
-            list[Message]
-        )
-
     def _connect(self) -> sqlite3.Connection:
 
         connection = sqlite3.connect(self.db_path)
@@ -175,7 +168,7 @@ class ConversationStore:
     # Conversation
     # ------------------------------------------------------------------
 
-    def create_conversation(
+    def create_conversation_if_not_exist(
         self,
         conversation_id: str,
         title: str,
@@ -187,7 +180,7 @@ class ConversationStore:
 
             connection.execute(
                 """
-                INSERT INTO conversations (
+                INSERT OR IGNORE INTO conversations (
                     id,
                     title,
                     created_at,

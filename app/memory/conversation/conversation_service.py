@@ -15,7 +15,10 @@ from langchain_core.messages import (
     ToolMessage,
 )
 
-from app.memory.conversation.conversation_schemas import Attachment
+from app.memory.conversation.application_conversation_schemas import ( 
+    Attachment,
+    Conversation
+)
 from app.memory.conversation.conversation_store import ConversationStore
 
 
@@ -44,15 +47,18 @@ class ConversationService:
     # Conversation
     # ------------------------------------------------------------------
 
-    def create_conversation(
+    def create_conversation_if_not_exist(
         self,
         conversation_id: str,
         title: str,
     ) -> None:
+        """
+        Insert new conversation into sqlite db, do nothing if already exist
+        """
 
         now = datetime.now(UTC).isoformat()
 
-        self.store.create_conversation(
+        self.store.create_conversation_if_not_exist(
             conversation_id=conversation_id,
             title=title,
             created_at=now,
@@ -60,12 +66,14 @@ class ConversationService:
         )
 
     def list_conversations(self):
+        """Simply load all conversations, no messages"""
         return self.store.list_conversations()
 
     def get_conversation(
         self,
         conversation_id: str,
-    ):
+    ) -> Conversation:
+        """Get Conversation and its messages/attachments by id"""
         conversation = self.store.get_conversation(
             conversation_id,
         )
@@ -73,6 +81,8 @@ class ConversationService:
             conversation.messages = self.store.get_chat_messages(
                 conversation_id
             )
+
+        
 
         return conversation
 

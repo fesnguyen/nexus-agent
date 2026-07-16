@@ -13,7 +13,6 @@ import uuid
 
 from fastapi import File, UploadFile
 
-from app.api.schemas.conversation import Conversation
 from app.memory.conversation.conversation_service import ConversationService
 from app.vision.vision_service import VisionService
 from configs.agent_settings import CHAT_IMAGES_DIR
@@ -40,50 +39,44 @@ class ChatUseCase:
         conversation_id: str,
         message: str,
         attachments: list[UploadFile] = File([]),
-    ) -> tuple[str, list[str]]:
+    ) -> str:
         """
         Process a single chat message.
         """
 
         # Ensure conversation exists
-        conversation = self.conversation_service.get_conversation(
-            conversation_id,
-        )
-
-        if conversation is None:
-
-            self.conversation_service.create_conversation(
+        self.conversation_service.create_conversation_if_not_exist(
                 conversation_id=conversation_id,
                 title=message[:40] if message else "New Conversation",
             )
 
-        # Handle attachments, storing image files and return it
-        image_attachments = self.handle_attachments(attachments)
+        # Store and extract image content, get attachments for save in sqlite
+        db_image_attachments = self.handle_attachments(attachments)
 
         # Persist user message here since user message belong to service, not agent
         self.conversation_service.save_user_message(
             conversation_id=conversation_id,
             content=message,
-            attachments=image_attachments,
+            attachments=db_image_attachments,
         )
 
-        # Load complete history
+        # Load completed history
         history = self.conversation_service.build_history(
             conversation_id=conversation_id,
         )
 
-        attachments = self.conversation_service.get_conversation_attachments(
+        # Load attachments' extracted contents
+        attachments_context = self.conversation_service.get_conversation_attachments(
             conversation_id,
         )
 
+        # Invoke workflow with messages and attachments' extracted contents
         state = {
             # conversation_id will be a mark of appending handle message to db
             "conversation_id": conversation_id,
             "messages": history,
-            "attachments": attachments,
+            "attachments": attachments_context,
         }
-
-        # Invoke workflow
         assistant_response = self.workflow.invoke(state)
 
         return assistant_response["messages"][-1].content
@@ -92,9 +85,10 @@ class ChatUseCase:
     def handle_attachments(
         self,
         attachments: list[UploadFile] = File([]),
-    ) -> list:
+    ) -> list[UploadFile]:
         """
-        Handle attachments: Separate attachment by type and handle each
+        Handle attachments: Separate attachment by type, storing them then,
+        extract their contents and return (currently) images one
         """
         if attachments:
             image_attachments = []

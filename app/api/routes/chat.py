@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Request, File
 
-from app.api.schemas.chat import ChatRequest, ChatResponse
+from app.api.schemas.api_chat_schema import ChatRequest, ChatResponse
 
 
 router = APIRouter(
