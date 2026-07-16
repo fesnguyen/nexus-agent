@@ -1,4 +1,3 @@
-from app.core.app import agent_context
 from app.graph.state import State
 from app.graph.workers.agent_worker import (
     build_response_state,
@@ -8,8 +7,7 @@ from app.graph.workers.agent_worker import (
     persist_assistant_response,
     retrieve_contexts,
 )
-from app.prompt.system_prompts import SYSTEM_PROMPT
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+
 
 def agent_node(state: State):
     """

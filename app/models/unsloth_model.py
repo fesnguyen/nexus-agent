@@ -4,6 +4,7 @@ from typing import Type
 from pydantic import BaseModel, Field
 
 from app.contracts.agent_decision import AgentDecision
+from app.memory.conversation.conversation_schemas import Attachment
 from app.models.base import BaseLLM
 from app.tools.registry import ToolRegistry
 
@@ -22,6 +23,7 @@ class UnslothModel(BaseLLM):
         self.max_new_tokens = kwargs.get("max_new_tokens", 512)
         self.max_seq_length = kwargs.get("max_seq_length", self.max_new_tokens * 16)
         self.temperature = kwargs.get("temperature", 0.0)
+        self.max_retries = kwargs.get("max_retries", 3)
 
         print(f"Loading model: {model_name}")
 
@@ -44,12 +46,15 @@ class UnslothModel(BaseLLM):
         self,
         messages,
         tool: ToolRegistry,
+        attachments: list[Attachment],
     ) -> str:
         """
         Convert LangChain messages into a chat prompt.
         """
 
         chat_messages = []
+
+        attachment_index = 0
 
         for msg in messages:
 
@@ -64,10 +69,31 @@ class UnslothModel(BaseLLM):
             elif msg.type == "tool":
                 role = "tool"
 
+            content = msg.content
+
+            # Attach extracted image context to the user message.
+            if role == "user":
+                # As the flow, message_id for every user messages are a MUST
+                message_id = msg.additional_kwargs["message_id"]
+
+                while (
+                    attachment_index < len(attachments)
+                    and attachments[attachment_index].message_id == message_id
+                ):
+                    attachment = attachments[attachment_index]
+
+                    content += (
+                        "\n\n"
+                        f"[Attachment {attachment_index + 1}: {attachment.type.capitalize()}]\n"
+                        f"{attachment.extracted_content}\n"
+                    )
+
+                    attachment_index += 1
+
             chat_messages.append(
                 {
                     "role": role,
-                    "content": msg.content,
+                    "content": content,
                 }
             )
 
@@ -111,16 +137,19 @@ class UnslothModel(BaseLLM):
 
             return response_model()
 
+
     def invoke(
         self,
         messages,
         tool: ToolRegistry,
         response_model: Type[BaseModel] = AgentDecision,
+        attachments: list[Attachment] = [],
     ) -> BaseModel:
 
         prompt = self._build_prompt(
             messages,
             tool,
+            attachments,
         )
 
         inputs = self.tokenizer(
@@ -128,27 +157,109 @@ class UnslothModel(BaseLLM):
             return_tensors="pt",
         ).to(self.model.device)
 
-        outputs = self.model.generate(
-            **inputs,
-            max_new_tokens=self.max_new_tokens,
-            use_cache=True,
-            temperature=self.temperature,
-            do_sample=self.temperature > 0,
-            pad_token_id=self.tokenizer.eos_token_id, # Prevent annoying warnings
+        for attempt in range(self.max_retries):
+
+            outputs = self.model.generate(
+                **inputs,
+                max_new_tokens=self.max_new_tokens,
+                use_cache=True,
+                temperature=self.temperature + attempt * 0.2,
+                do_sample=(self.temperature + attempt * 0.2) > 0,
+                pad_token_id=self.tokenizer.eos_token_id,
+            )
+
+            generated_tokens = outputs[
+                0,
+                inputs["input_ids"].shape[1]:,
+            ]
+
+            text = self.tokenizer.decode(
+                generated_tokens,
+                skip_special_tokens=True,
+            )
+
+            decision = self._parse_response(
+                text,
+                response_model,
+            )
+
+            # Valid output
+            if decision.tool_calls or decision.response.strip():
+                return decision
+
+        print(
+            f"Failed to generate a valid response after {self.max_retries} attempts."
         )
 
-        # Slice the sequence to isolate newly predicted response tokens
-        generated_tokens = outputs[
-            0,
-            inputs["input_ids"].shape[1]:,
-        ]
+        return response_model(
+            thought="Failed to generate a valid response.",
+            response="Sorry, I couldn't answer this yet.",
+            tool_calls=[],
+        )
+    
 
-        text = self.tokenizer.decode(
-            generated_tokens,
-            skip_special_tokens=True,
+    def invoke_structured(
+        self,
+        messages,
+        response_model: Type[BaseModel],
+    ) -> BaseModel:
+        """
+        Invoke the model for structured generation without tool calling.
+
+        Used for internal application tasks such as query rewriting,
+        title generation, memory extraction, etc.
+        """
+
+        prompt = self.tokenizer.apply_chat_template(
+            [
+                {
+                    "role": (
+                        "system"
+                        if msg.type == "system"
+                        else "user"
+                        if msg.type == "human"
+                        else "assistant"
+                    ),
+                    "content": msg.content,
+                }
+                for msg in messages
+            ],
+            tokenize=False,
+            add_generation_prompt=True,
         )
 
-        return self._parse_response(
-            text,
-            response_model
-        )
+        inputs = self.tokenizer(
+            prompt,
+            return_tensors="pt",
+        ).to(self.model.device)
+
+        for _ in range(self.max_retries):
+
+            outputs = self.model.generate(
+                **inputs,
+                max_new_tokens=self.max_new_tokens,
+                use_cache=True,
+                temperature=self.temperature,
+                do_sample=self.temperature > 0,
+                pad_token_id=self.tokenizer.eos_token_id,
+            )
+
+            generated_tokens = outputs[
+                0,
+                inputs["input_ids"].shape[1]:,
+            ]
+
+            text = self.tokenizer.decode(
+                generated_tokens,
+                skip_special_tokens=True,
+            )
+
+            result = self._parse_response(
+                text,
+                response_model,
+            )
+
+            if result is not None:
+                return result
+
+        return response_model()

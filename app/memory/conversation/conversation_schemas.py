@@ -12,6 +12,26 @@ class Message:
     created_at: datetime
 
 @dataclass(slots=True)
+class Attachment():
+    """
+    Persisted attachment.
+    """
+
+    id: int
+
+    message_id: int
+
+    type: str
+
+    storage_path: str
+
+    mime_type: str
+
+    extracted_content: str
+
+    created_at: datetime
+
+@dataclass(slots=True)
 class Conversation:
     id: str
     title: str

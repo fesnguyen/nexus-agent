@@ -1,15 +1,9 @@
 from typing import Annotated, NotRequired
-from typing import Any
 from typing import TypedDict
 
 from langgraph.graph.message import add_messages
 
-from app.contracts.tool_call import ToolCall
-from app.graph.states.memory import MemoryState
-from app.graph.states.multimodal import MultimodalState
-from app.graph.states.planning import PlanningState
-from app.graph.states.retrieval import RetrievalState
-from app.graph.states.tool import ToolState
+from app.memory.conversation.conversation_schemas import Attachment
 
 
 class State(TypedDict, total=False):
@@ -18,6 +12,11 @@ class State(TypedDict, total=False):
     # Message centric, this is the only source of truth for agent decision
     # =====================
     messages: Annotated[list, add_messages]
+
+    # =====================
+    # Extracted attachment context
+    # =====================
+    attachments: list[Attachment]
 
     # =====================
     # Conversation id to manage conversation history

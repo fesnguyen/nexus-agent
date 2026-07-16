@@ -5,7 +5,7 @@ from typing import Literal
 from typing import Optional
 
 from app.api.schemas.base import BaseSchema
-from app.api.schemas.attachment import Attachment
+from app.memory.conversation.conversation_schemas import Attachment
 
 
 class Message(BaseSchema):

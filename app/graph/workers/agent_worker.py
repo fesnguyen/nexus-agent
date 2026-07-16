@@ -17,7 +17,6 @@ from app.contracts.agent_decision import AgentDecision
 from app.core.app import agent_context
 from app.graph.state import State
 from app.prompt.system_prompts import SYSTEM_PROMPT
-from app.utils import extract_user_message
 
 
 def get_user_query(
@@ -31,7 +30,7 @@ def get_user_query(
     for message in reversed(state["messages"]):
 
         if isinstance(message, HumanMessage):
-            user_query, _ = extract_user_message(message.content)
+            user_query = message.content
 
     return user_query
 
@@ -166,6 +165,7 @@ def invoke_model(
             *state["messages"],
         ],
         tool=agent_context.tool_registry,
+        attachments=state["attachments"],
     )
 
 

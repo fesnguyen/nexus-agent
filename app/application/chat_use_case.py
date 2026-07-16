@@ -15,7 +15,6 @@ from fastapi import File, UploadFile
 
 from app.api.schemas.conversation import Conversation
 from app.memory.conversation.conversation_service import ConversationService
-from app.utils import extract_user_message
 from app.vision.vision_service import VisionService
 from configs.agent_settings import CHAT_IMAGES_DIR
 
@@ -58,11 +57,51 @@ class ChatUseCase:
                 title=message[:40] if message else "New Conversation",
             )
 
-        image_attachments = []
+        # Handle attachments, storing image files and return it
+        image_attachments = self.handle_attachments(attachments)
+
+        # Persist user message here since user message belong to service, not agent
+        self.conversation_service.save_user_message(
+            conversation_id=conversation_id,
+            content=message,
+            attachments=image_attachments,
+        )
+
+        # Load complete history
+        history = self.conversation_service.build_history(
+            conversation_id=conversation_id,
+        )
+
+        attachments = self.conversation_service.get_conversation_attachments(
+            conversation_id,
+        )
+
+        state = {
+            # conversation_id will be a mark of appending handle message to db
+            "conversation_id": conversation_id,
+            "messages": history,
+            "attachments": attachments,
+        }
+
+        # Invoke workflow
+        assistant_response = self.workflow.invoke(state)
+
+        return assistant_response["messages"][-1].content
+    
+    
+    def handle_attachments(
+        self,
+        attachments: list[UploadFile] = File([]),
+    ) -> list:
+        """
+        Handle attachments: Separate attachment by type and handle each
+        """
         if attachments:
+            image_attachments = []
             for attachment in attachments:
+                # Handle image type attachments
                 if attachment.content_type and attachment.content_type.startswith("image/"):
-                    storage_path = self.save_image_attachment(attachment)
+                    storage_path = self.store_image_attachment(attachment)
 
                     extraction = self.vision_service.extract(
                         image_path=Path(storage_path),
@@ -77,32 +116,11 @@ class ChatUseCase:
                             "created_at": datetime.now(UTC).isoformat()
                         }
                     )
+            
+            return image_attachments
 
-        # Persist user message here since user message belong to service, not agent
-        self.conversation_service.save_user_message(
-            conversation_id=conversation_id,
-            content=message,
-            attachments=image_attachments,
-        )
 
-        # Load complete history
-        history = self.conversation_service.build_history(
-            conversation_id=conversation_id,
-        )
-
-        state = {
-            # conversation_id will be a mark of appending handle message to db
-            "conversation_id": conversation_id,
-            "messages": history,
-        }
-
-        # Invoke workflow
-        assistant_response = self.workflow.invoke(state)
-
-        return assistant_response["messages"][-1].content
-    
-
-    def save_image_attachment(self, file: UploadFile) -> str:
+    def store_image_attachment(self, file: UploadFile) -> str:
         """Saves the image locally and returns the relative path/URL."""
         # Generate a unique filename to prevent collisions
         ext = os.path.splitext(file.filename)[1] or ".png"

@@ -4,7 +4,7 @@ Conversation SQLite repository.
 
 from __future__ import annotations
 
-from app.api.schemas.attachment import Attachment
+from app.memory.conversation.conversation_schemas import Attachment
 from app.memory.conversation.conversation_schemas import Message
 import sqlite3
 from pathlib import Path
@@ -341,6 +341,9 @@ class ConversationStore:
         Persist attachments belonging to a message.
         """
 
+        if not attachments:
+            return
+
         with self._connect() as connection:
 
             connection.executemany(
@@ -384,6 +387,28 @@ class ConversationStore:
                 FROM messages
                 WHERE conversation_id = ?
                 ORDER BY id ASC
+                """,
+                (conversation_id,),
+            )
+
+            return list(cursor.fetchall())
+        
+    def get_attachments_by_conversation_id(
+        self,
+        conversation_id: str,
+    ) -> list[sqlite3.Row]:
+        with self._connect() as connection:
+            cursor = connection.execute(
+                """
+                SELECT
+                    a.*
+                FROM attachments AS a
+                INNER JOIN messages AS m
+                    ON a.message_id = m.id
+                WHERE m.conversation_id = ?
+                ORDER BY
+                    a.message_id ASC,
+                    a.id ASC
                 """,
                 (conversation_id,),
             )

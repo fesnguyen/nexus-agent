@@ -21,8 +21,6 @@ from langchain_core.messages import (
 )
 from pydantic import BaseModel
 
-from app.tools.registry import ToolRegistry
-
 
 SYSTEM_PROMPT = """
 You are a query rewriting assistant.
@@ -80,13 +78,12 @@ class LLMQueryRewriter(BaseQueryRewriter):
             history=history,
         )
 
-        result = self._model_manager.invoke(
+        result = self._model_manager.invoke_structured(
             messages=[
                 SystemMessage(
                     content=system_prompt
                 ),
             ],
-            tool=ToolRegistry(),
             response_model=RewrittenQuery,
         )
 

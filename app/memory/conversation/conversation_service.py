@@ -15,7 +15,7 @@ from langchain_core.messages import (
     ToolMessage,
 )
 
-from app.api.schemas.attachment import Attachment
+from app.memory.conversation.conversation_schemas import Attachment
 from app.memory.conversation.conversation_store import ConversationStore
 
 
@@ -211,14 +211,13 @@ class ConversationService:
                     )
 
                 case ("user", _):
-                    # Expect the content format in db is
-                    # "[{"type": "text", "text": "<user request>"},
-                    # {"type"" "image_url", "url": "<image url>"},{...}...]"
-                    vlm_content = json.loads(row["content"])
-                    
                     history.append(
                         HumanMessage(
-                            content=vlm_content,
+                            content=row["content"],
+                            # Need message_id to map attachments
+                            additional_kwargs={
+                                "message_id": row["id"],
+                            },
                         )
                     )
 
@@ -238,6 +237,7 @@ class ConversationService:
                 case ("assistant", "tool_call"):
                     history.append(
                         AIMessage(
+                            # Persistent tool message to avoid model hallucination
                             content=json.dumps(
                                 {
                                     "thought": "Ignored",
@@ -252,7 +252,7 @@ class ConversationService:
                             ],
                         )
                     )
-
+                
                 case ("tool", "tool_result"):
                     history.append(
                         ToolMessage(
@@ -267,3 +267,31 @@ class ConversationService:
                     )
 
         return history
+    
+
+    def get_conversation_attachments(
+        self,
+        conversation_id: str,
+    ) -> list[Attachment]:
+        """
+        Return all attachments belonging to a conversation.
+        """
+
+        rows = self.store.get_attachments_by_conversation_id(
+            conversation_id,
+        )
+
+        return [
+            Attachment(
+                id=row["id"],
+                message_id=row["message_id"],
+                type=row["type"],
+                storage_path=row["storage_path"],
+                mime_type=row["mime_type"],
+                extracted_content=json.loads(
+                    row["extracted_content"]
+                ),
+                created_at=row["created_at"],
+            )
+            for row in rows
+        ]

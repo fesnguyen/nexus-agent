@@ -16,3 +16,7 @@ class BaseLLM(ABC):
     @abstractmethod
     def invoke(self, messages, tool: ToolRegistry, response_model: Type[BaseModel]) -> BaseModel:
         pass
+
+    @abstractmethod
+    def invoke_structured(self, messages, tool: ToolRegistry, response_model: Type[BaseModel]) -> BaseModel:
+        pass
