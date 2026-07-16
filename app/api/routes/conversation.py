@@ -6,9 +6,9 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Request
 
-from app.api.schemas.api_conversation_schema import (
-    ConversationResponse,
-    ConversationsResponse,
+from app.api.schemas.api_conversation_schemas import (
+    ConversationResponseDTO,
+    ConversationsResponseDTO,
 )
 
 router = APIRouter(
@@ -20,7 +20,7 @@ router = APIRouter(
 @router.get("")
 async def get_conversations(
     request: Request,
-) -> ConversationsResponse:
+) -> ConversationsResponseDTO:
     """
     Return all conversations together with the active conversation.
     """
@@ -34,7 +34,7 @@ async def get_conversations(
 async def get_conversation(
     conversation_id: str,
     request: Request,
-) -> ConversationResponse:
+) -> ConversationResponseDTO:
     """
     Return a conversation and all of its messages.
     """

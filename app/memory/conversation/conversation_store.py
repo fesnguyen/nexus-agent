@@ -222,6 +222,7 @@ class ConversationStore:
                 title=cursor["title"],
                 created_at=cursor["created_at"],
                 updated_at=cursor["updated_at"],
+                messages=[],
             )
 
     def list_conversations(
@@ -242,6 +243,7 @@ class ConversationStore:
                 title=row["title"],
                 created_at=row["created_at"],
                 updated_at=row["updated_at"],
+                messages=[],
             )
             for row in rows
         ]

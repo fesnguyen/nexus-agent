@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Literal
 from fastapi import File, Form, UploadFile
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.api.schemas.base import BaseSchema
+from app.api.schemas.base import BaseDTO
 
 
 class ChatRequest(BaseModel):
@@ -36,5 +36,5 @@ class ChatRequest(BaseModel):
         )
 
 
-class ChatResponse(BaseSchema):
+class ChatResponse(BaseDTO):
     content: str

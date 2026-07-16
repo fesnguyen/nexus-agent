@@ -1,18 +1,9 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 
 
 @dataclass(slots=True)
-class Message:
-    id: str
-    conversation_id: str
-    role: str
-    type: str
-    content: str
-    created_at: datetime
-
-@dataclass(slots=True)
-class Attachment():
+class Attachment:
     """
     Persisted attachment.
     """
@@ -31,10 +22,22 @@ class Attachment():
 
     created_at: datetime
 
+
+@dataclass(slots=True)
+class Message:
+    id: str
+    conversation_id: str
+    role: str
+    type: str
+    content: str
+    created_at: datetime
+    attachments: list[Attachment] = field(default_factory=list)
+
+
 @dataclass(slots=True)
 class Conversation:
     id: str
     title: str
     created_at: datetime
     updated_at: datetime
-    messages: list[Message]
+    messages: list[Message] = field(default_factory=list)

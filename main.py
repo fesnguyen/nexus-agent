@@ -3,6 +3,9 @@ from __future__ import annotations
 from contextlib import asynccontextmanager
 import os
 
+# Force all Hugging Face loaders to look ONLY at local cache
+os.environ["HF_HUB_OFFLINE"] = "1"
+
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
@@ -16,7 +19,7 @@ from app.api.routes.chat import router as chat_router
 from app.api.routes.conversation import router as conversation_router
 from fastapi.middleware.cors import CORSMiddleware
 
-from configs.agent_settings import CHAT_IMAGES_DIR
+from configs.agent_settings import CHAT_IMAGES_DIR, MOUNTED_IMAGES_FOLDER
 
 # ============================================================
 # Application Lifecycle
@@ -105,7 +108,7 @@ app.add_middleware(
 os.makedirs(CHAT_IMAGES_DIR, exist_ok=True)
 
 # Mount the folder to the /images URL path
-app.mount("/images", StaticFiles(directory=CHAT_IMAGES_DIR), name="chat_images")
+app.mount(MOUNTED_IMAGES_FOLDER, StaticFiles(directory=CHAT_IMAGES_DIR), name="chat_images")
 
 app.include_router(chat_router)
 app.include_router(conversation_router)

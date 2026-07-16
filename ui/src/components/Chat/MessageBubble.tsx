@@ -1,3 +1,5 @@
+import { API_BASE } from "../../api/client";
+
 export default function MessageBubble({ message }) {
   const isUser = message.role === "user";
 
@@ -15,7 +17,7 @@ export default function MessageBubble({ message }) {
             {message.attachments.map((a, i) => (
               <img
                 key={i}
-                src={a.url}
+                src={a.url || (API_BASE + a.storagePath)}
                 alt={a.name || "attachment"}
                 className="h-28 w-28 rounded-lg object-cover"
               />

@@ -145,7 +145,14 @@ class SmolVLMWorker(BaseVisionWorker):
         )
 
         inputs = {
-            key: value.to(self._device)
+            key: (
+                value.to(
+                    device=self._device,
+                    dtype=torch.bfloat16,
+                )
+                if torch.is_floating_point(value)
+                else value.to(self._device)
+            )
             for key, value in inputs.items()
         }
 

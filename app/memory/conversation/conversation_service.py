@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import json
 from datetime import UTC, datetime
+from pathlib import Path
 
 from langchain_core.messages import (
     AIMessage,
@@ -20,6 +21,7 @@ from app.memory.conversation.application_conversation_schemas import (
     Conversation
 )
 from app.memory.conversation.conversation_store import ConversationStore
+from configs.agent_settings import MOUNTED_IMAGES_FOLDER
 
 
 class ConversationService:
@@ -77,12 +79,47 @@ class ConversationService:
         conversation = self.store.get_conversation(
             conversation_id,
         )
-        if conversation is not None:
-            conversation.messages = self.store.get_chat_messages(
-                conversation_id
+
+        if conversation is None:
+            raise ValueError(
+                f"Conversation '{conversation_id}' not found."
             )
 
+        messages = self.store.get_chat_messages(
+            conversation_id
+        )
         
+        # Get all conversation attachments
+        attachments = [
+            Attachment(
+                id=row["id"],
+                message_id=row["message_id"],
+                type=row["type"],
+                storage_path=f"{MOUNTED_IMAGES_FOLDER}{Path(row['storage_path']).name}",#/images/<name>
+                mime_type=row["mime_type"],
+                extracted_content=row["extracted_content"],
+                created_at=row["created_at"],
+            )
+            for row in self.store.get_attachments_by_conversation_id(
+                conversation_id,
+            )
+        ]
+
+        # Map attachments to message by message_id by looping attachment index
+        attachment_index = 0
+        for message in messages:
+            message.attachments = []
+
+            while (
+                # Map attachments to messages until no attchment left
+                attachment_index < len(attachments)
+                and attachments[attachment_index].message_id == message.id
+            ):
+                message.attachments.append(
+                    attachments[attachment_index]
+                )
+                attachment_index += 1
+        conversation.messages = messages
 
         return conversation
 
