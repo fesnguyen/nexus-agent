@@ -15,5 +15,5 @@ class VisionWorkerType(StrEnum):
     MINI_CPM = "mini_cpm"
 
     SMOL_VLM = "smol_vlm"
-    PADDLE_OCR = "paddle_ocr"
+    RAPID_OCR = "paddle_ocr"
     SIGLIP = "siglip"

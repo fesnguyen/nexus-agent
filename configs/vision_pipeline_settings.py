@@ -8,6 +8,9 @@ MINI_CPM_WORKER_MODEL = "openbmb/MiniCPM-V-2_6"
 
 SMOL_VLM_WORKER_MODEL = "HuggingFaceTB/SmolVLM-500M-Instruct"
 
+RAPID_OCR_WORKER_MODEL = "RapidOCR"
+
 # Capability backends
 VISION_CAPTIONER_WORKER = VisionWorkerType.SMOL_VLM
-VISION_TEXT_EXTRACTOR_WORKER = VisionWorkerType.SMOL_VLM
+
+VISION_OCR_WORKER = VisionWorkerType.RAPID_OCR

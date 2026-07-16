@@ -29,7 +29,7 @@ class BaseVisionCapability(ABC):
     def _process(
         self,
         image: Image.Image,
-        prompt: str,
+        **kwargs: Any,
     ) -> Any:
         worker = self._worker_manager.get_worker(
             self._worker_type,
@@ -37,5 +37,5 @@ class BaseVisionCapability(ABC):
 
         return worker.process(
             image=image,
-            prompt=prompt,
+            **kwargs,
         )

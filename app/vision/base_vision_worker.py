@@ -75,7 +75,7 @@ class BaseVisionWorker(ABC):
     def process(
         self,
         image: Image.Image,
-        prompt: str,
+        **kwargs: Any,
     ) -> Any:
         """
         Execute inference.

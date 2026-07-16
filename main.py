@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 import os
 
 # Force all Hugging Face loaders to look ONLY at local cache
-os.environ["HF_HUB_OFFLINE"] = "1"
+# os.environ["HF_HUB_OFFLINE"] = "1"
 
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles

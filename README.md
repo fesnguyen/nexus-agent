@@ -348,35 +348,42 @@ Current capabilities:
 
 ---
 
-# Multimodaling design (In progress)
+# Vision process pipeline
 
+```text
 vision_pipeline_settings.py
         │
         ▼
 VisionWorkerManager
         │
-   (Factory + Singleton)
+ (Factory + Singleton)
         │
-        ▼
-BaseVisionWorker
-        ▲
-        │
- ┌──────┼────────────┐
- │      │            │
- ▼      ▼            ▼
-Florence MiniCPM PaddleOCR
-        ▲
-        │
-BaseVisionCapability
-        ▲
-        │
- ┌──────┼──────────────┐
- │      │              │
- ▼      ▼              ▼
-Caption OCR        Embedding
-        ▲
-        │
- VisionService
+        ├───────────────┐
+        │               │
+        ▼               ▼
+ SmolVLMWorker    RapidOCRWorker
+        ▲               ▲
+        │               │
+ Captioner             OCR
+        │               │
+        └──────┬────────┘
+               ▼
+        VisionService
+               │
+               ▼
+ VisionExtractionResult
+               │
+               ▼
+      LangGraph State
+```
+
+The multimodal pipeline separates **workers**, **capabilities**, and **orchestration**.
+
+- **VisionWorkerManager** creates and reuses worker instances.
+- **Vision Workers** wrap model-specific implementations (e.g., SmolVLM, RapidOCR).
+- **Vision Capabilities** expose application features (e.g., Captioning, OCR) without depending on a specific model.
+- **VisionService** executes the required capabilities and combines their outputs into a unified `VisionExtractionResult`.
+- The agent consumes `VisionExtractionResult` instead of raw images, making the pipeline **model-agnostic**, **extensible**, and **easy to maintain**.
 
 ---
 

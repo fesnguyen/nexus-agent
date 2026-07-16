@@ -59,13 +59,24 @@ class SmolVLMWorker(BaseVisionWorker):
 
         self._model = AutoModelForImageTextToText.from_pretrained(
             self.model_name,
-            dtype=(
+            torch_dtype=(
                 torch.bfloat16
                 if self._device == "cuda"
                 else torch.float32
             ),
             attn_implementation="sdpa",
         ).to(self._device)
+
+        print("Model dtype:", self._model.dtype)
+        print("Vision tower dtype:", self._model.model.vision_model.dtype)
+
+        for name, tensor in self._model.named_buffers():
+            if tensor.is_floating_point():
+                print(name, tensor.dtype)
+
+        for name, param in self._model.named_parameters():
+            if param.dtype != torch.bfloat16:
+                print(name, param.dtype)
 
         self._model.eval()
 

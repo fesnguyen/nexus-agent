@@ -7,4 +7,6 @@ class VisionExtractionResult:
     Unified output of the vision pipeline.
     """
 
-    caption: str
+    caption: str = ""
+
+    ocr: str = ""

@@ -18,6 +18,7 @@ from app.tools.registry import ToolRegistry
 # from app.retrieval.processing.heuristic_query_rewriter import HeuristicQueryRewriter
 
 from app.vision.capability.vision_captioner import VisionCaptioner
+from app.vision.capability.vision_ocr import VisionOCR
 from app.vision.vision_service import VisionService
 from app.vision.vision_worker_manager import VisionWorkerManager
 from configs.agent_settings import (
@@ -73,10 +74,13 @@ class AgentContext:
             worker_manager=self.vision_worker_manager,
         )
 
+        self.vision_ocr = VisionOCR(
+            worker_manager=self.vision_worker_manager,
+        )
+
         self.vision_service = VisionService(
             captioner=self.vision_captioner,
-            # text_extractor=self.vision_text_extractor,
-            # embedder=self.vision_embedder,
+            ocr=self.vision_ocr,
         )
 
         # For testing purpose only, uncomment to test vision process pipeline
