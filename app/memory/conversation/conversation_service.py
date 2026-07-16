@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import json
 from datetime import UTC, datetime
+from pathlib import Path
 
 from langchain_core.messages import (
     AIMessage,
@@ -15,7 +16,12 @@ from langchain_core.messages import (
     ToolMessage,
 )
 
+from app.memory.conversation.application_conversation_schemas import ( 
+    Attachment,
+    Conversation
+)
 from app.memory.conversation.conversation_store import ConversationStore
+from configs.agent_settings import MOUNTED_IMAGES_FOLDER
 
 
 class ConversationService:
@@ -43,15 +49,18 @@ class ConversationService:
     # Conversation
     # ------------------------------------------------------------------
 
-    def create_conversation(
+    def create_conversation_if_not_exist(
         self,
         conversation_id: str,
         title: str,
     ) -> None:
+        """
+        Insert new conversation into sqlite db, do nothing if already exist
+        """
 
         now = datetime.now(UTC).isoformat()
 
-        self.store.create_conversation(
+        self.store.create_conversation_if_not_exist(
             conversation_id=conversation_id,
             title=title,
             created_at=now,
@@ -59,19 +68,58 @@ class ConversationService:
         )
 
     def list_conversations(self):
+        """Simply load all conversations, no messages"""
         return self.store.list_conversations()
 
     def get_conversation(
         self,
         conversation_id: str,
-    ):
+    ) -> Conversation:
+        """Get Conversation and its messages/attachments by id"""
         conversation = self.store.get_conversation(
             conversation_id,
         )
-        if conversation is not None:
-            conversation.messages = self.store.get_chat_messages(
-                conversation_id
+
+        if conversation is None:
+            raise ValueError(
+                f"Conversation '{conversation_id}' not found."
             )
+
+        messages = self.store.get_chat_messages(
+            conversation_id
+        )
+        
+        # Get all conversation attachments
+        attachments = [
+            Attachment(
+                id=row["id"],
+                message_id=row["message_id"],
+                type=row["type"],
+                storage_path=f"{MOUNTED_IMAGES_FOLDER}{Path(row['storage_path']).name}",#/images/<name>
+                mime_type=row["mime_type"],
+                extracted_content=row["extracted_content"],
+                created_at=row["created_at"],
+            )
+            for row in self.store.get_attachments_by_conversation_id(
+                conversation_id,
+            )
+        ]
+
+        # Map attachments to message by message_id by looping attachment index
+        attachment_index = 0
+        for message in messages:
+            message.attachments = []
+
+            while (
+                # Map attachments to messages until no attchment left
+                attachment_index < len(attachments)
+                and attachments[attachment_index].message_id == message.id
+            ):
+                message.attachments.append(
+                    attachments[attachment_index]
+                )
+                attachment_index += 1
+        conversation.messages = messages
 
         return conversation
 
@@ -103,13 +151,24 @@ class ConversationService:
         self,
         conversation_id: str,
         content: str,
+        attachments: list[Attachment] | None = None
     ) -> None:
+        """
+        Persist a user message.
 
-        self._append_message(
+        Attachments are stored separately in the attachments table.
+        """
+
+        message_id = self._append_message(
             conversation_id=conversation_id,
             role="user",
             type="chat",
             content=content,
+        )
+
+        self.store.append_attachments(
+            message_id=message_id,
+            attachments=attachments,
         )
 
     def save_tool_call(
@@ -157,9 +216,9 @@ class ConversationService:
         role: str,
         type: str,
         content: str,
-    ) -> None:
+    ) -> int:
 
-        self.store.append_message(
+        return self.store.append_message(
             conversation_id=conversation_id,
             role=role,
             type=type,
@@ -202,6 +261,10 @@ class ConversationService:
                     history.append(
                         HumanMessage(
                             content=row["content"],
+                            # Need message_id to map attachments
+                            additional_kwargs={
+                                "message_id": row["id"],
+                            },
                         )
                     )
 
@@ -221,6 +284,7 @@ class ConversationService:
                 case ("assistant", "tool_call"):
                     history.append(
                         AIMessage(
+                            # Persistent tool message to avoid model hallucination
                             content=json.dumps(
                                 {
                                     "thought": "Ignored",
@@ -235,7 +299,7 @@ class ConversationService:
                             ],
                         )
                     )
-
+                
                 case ("tool", "tool_result"):
                     history.append(
                         ToolMessage(
@@ -250,3 +314,31 @@ class ConversationService:
                     )
 
         return history
+    
+
+    def get_conversation_attachments(
+        self,
+        conversation_id: str,
+    ) -> list[Attachment]:
+        """
+        Return all attachments belonging to a conversation.
+        """
+
+        rows = self.store.get_attachments_by_conversation_id(
+            conversation_id,
+        )
+
+        return [
+            Attachment(
+                id=row["id"],
+                message_id=row["message_id"],
+                type=row["type"],
+                storage_path=row["storage_path"],
+                mime_type=row["mime_type"],
+                extracted_content=json.loads(
+                    row["extracted_content"]
+                ),
+                created_at=row["created_at"],
+            )
+            for row in rows
+        ]

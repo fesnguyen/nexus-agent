@@ -4,14 +4,16 @@ Conversation SQLite repository.
 
 from __future__ import annotations
 
-from app.memory.conversation.conversation_schemas import Message
+from app.memory.conversation.application_conversation_schemas import (
+    Attachment,
+    Message,
+    Conversation,
+)
 import sqlite3
 from pathlib import Path
 from typing import TypeVar
 
 from pydantic import TypeAdapter
-
-from app.api.schemas.conversation import Conversation, ConversationSummary
 
 
 CREATE_CONVERSATIONS_TABLE = """
@@ -40,6 +42,28 @@ CREATE TABLE IF NOT EXISTS messages (
 
     FOREIGN KEY (conversation_id)
         REFERENCES conversations(id)
+        ON DELETE CASCADE
+);
+"""
+
+CREATE_ATTACHMENTS_TABLE = """
+CREATE TABLE IF NOT EXISTS attachments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+    message_id INTEGER NOT NULL,
+
+    type TEXT NOT NULL,
+
+    storage_path TEXT NOT NULL,
+
+    mime_type TEXT NOT NULL,
+
+    extracted_content TEXT NOT NULL,
+
+    created_at TIMESTAMP NOT NULL,
+
+    FOREIGN KEY (message_id)
+        REFERENCES messages(id)
         ON DELETE CASCADE
 );
 """
@@ -104,14 +128,6 @@ class ConversationStore:
 
         self._initialize()
 
-        self._conversation_summary_adapter = TypeAdapter(
-            list[ConversationSummary]
-        )
-
-        self._message_adapter = TypeAdapter(
-            list[Message]
-        )
-
     def _connect(self) -> sqlite3.Connection:
 
         connection = sqlite3.connect(self.db_path)
@@ -139,6 +155,10 @@ class ConversationStore:
             )
 
             connection.execute(
+                CREATE_ATTACHMENTS_TABLE
+            )
+
+            connection.execute(
                 TRIGGER_UPDATE_CONVERSATION_UPDATED_AT
             )
 
@@ -148,7 +168,7 @@ class ConversationStore:
     # Conversation
     # ------------------------------------------------------------------
 
-    def create_conversation(
+    def create_conversation_if_not_exist(
         self,
         conversation_id: str,
         title: str,
@@ -160,7 +180,7 @@ class ConversationStore:
 
             connection.execute(
                 """
-                INSERT INTO conversations (
+                INSERT OR IGNORE INTO conversations (
                     id,
                     title,
                     created_at,
@@ -202,6 +222,7 @@ class ConversationStore:
                 title=cursor["title"],
                 created_at=cursor["created_at"],
                 updated_at=cursor["updated_at"],
+                messages=[],
             )
 
     def list_conversations(
@@ -222,6 +243,7 @@ class ConversationStore:
                 title=row["title"],
                 created_at=row["created_at"],
                 updated_at=row["updated_at"],
+                messages=[],
             )
             for row in rows
         ]
@@ -276,11 +298,11 @@ class ConversationStore:
         type: str,
         content: str,
         created_at: str,
-    ) -> None:
+    ) -> int:
 
         with self._connect() as connection:
 
-            connection.execute(
+            cursor = connection.execute(
                 """
                 INSERT INTO messages (
                     conversation_id,
@@ -302,6 +324,51 @@ class ConversationStore:
 
             connection.commit()
 
+            return cursor.lastrowid
+        
+    
+    def append_attachments(
+        self,
+        message_id: int,
+        attachments: list[Attachment],
+    ) -> None:
+        """
+        Persist attachments belonging to a message.
+        """
+
+        if not attachments:
+            return
+
+        with self._connect() as connection:
+
+            connection.executemany(
+                """
+                INSERT INTO attachments (
+                    message_id,
+                    type,
+                    storage_path,
+                    mime_type,
+                    extracted_content,
+                    created_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                [
+                    (
+                        message_id,
+                        attachment["type"],
+                        attachment["storage_path"],
+                        attachment["mime_type"],
+                        attachment["extracted_content"],
+                        attachment["created_at"],
+                    )
+                    for attachment in attachments
+                ],
+            )
+
+            connection.commit()
+
+
     def get_messages(
         self,
         conversation_id: str,
@@ -315,6 +382,28 @@ class ConversationStore:
                 FROM messages
                 WHERE conversation_id = ?
                 ORDER BY id ASC
+                """,
+                (conversation_id,),
+            )
+
+            return list(cursor.fetchall())
+        
+    def get_attachments_by_conversation_id(
+        self,
+        conversation_id: str,
+    ) -> list[sqlite3.Row]:
+        with self._connect() as connection:
+            cursor = connection.execute(
+                """
+                SELECT
+                    a.*
+                FROM attachments AS a
+                INNER JOIN messages AS m
+                    ON a.message_id = m.id
+                WHERE m.conversation_id = ?
+                ORDER BY
+                    a.message_id ASC,
+                    a.id ASC
                 """,
                 (conversation_id,),
             )

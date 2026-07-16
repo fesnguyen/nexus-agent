@@ -348,6 +348,40 @@ Current capabilities:
 
 ---
 
+# Multimodaling design (In progress)
+
+vision_pipeline_settings.py
+        │
+        ▼
+VisionWorkerManager
+        │
+   (Factory + Singleton)
+        │
+        ▼
+BaseVisionWorker
+        ▲
+        │
+ ┌──────┼────────────┐
+ │      │            │
+ ▼      ▼            ▼
+Florence MiniCPM PaddleOCR
+        ▲
+        │
+BaseVisionCapability
+        ▲
+        │
+ ┌──────┼──────────────┐
+ │      │              │
+ ▼      ▼              ▼
+Caption OCR        Embedding
+        ▲
+        │
+ VisionService
+
+---
+
+---
+
 # Running the Project
 
 Create the Conda environment:
@@ -377,6 +411,9 @@ npm install
 
 npm run dev
 ```
+
+## Running issues:
+Check the file known_issues.md
 
 ---
 
@@ -426,7 +463,7 @@ npm run dev
 
 ## 🚧 In Progress
 
-- Multimodal (VLM) Brain
+- Progressive Multimodal Pipeline (In Progress)
 - Multiple tool calls (simultaneously)
 - Docker deployment
 

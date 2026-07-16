@@ -8,4 +8,10 @@ AGENT_DIR = DATA_DIR / "agent"
 AGENT_DB_PATH = AGENT_DIR / "agent.db"
 
 # FAISS index for semantic memory.
-MEMORY_FAISS_PATH = AGENT_DIR / "memory" / "semantic.faiss"
+MEMORY_FAISS_PATH = AGENT_DIR / "agent" / "semantic.faiss"
+
+# User images directory
+CHAT_IMAGES_DIR = DATA_DIR / "agent" / "chat_images"
+
+# Mounted image folder
+MOUNTED_IMAGES_FOLDER = "/images/"

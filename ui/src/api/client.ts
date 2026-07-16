@@ -23,12 +23,13 @@ async function request<T>(path: string, options = {}): Promise<T>  {
 export const api = {
   health: () => request("/health"),
 
-  // Placeholder — wire this up to your real chat/workflow endpoint
-  // (e.g. a POST /chat route that invokes app.state.workflow).
-  sendMessage: (payload: ChatRequest) =>
+  sendMessage: (payload: FormData) =>
     request<ChatResponse>("/api/chat", {
       method: "POST",
-      body: JSON.stringify(payload),
+      body: payload,
+      headers: {
+
+      }
     }),
 
   listModels: () => request("/models"),

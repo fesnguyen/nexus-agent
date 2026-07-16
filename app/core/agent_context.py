@@ -17,9 +17,13 @@ from app.models.base import BaseLLM
 from app.tools.registry import ToolRegistry
 # from app.retrieval.processing.heuristic_query_rewriter import HeuristicQueryRewriter
 
+from app.vision.capability.vision_captioner import VisionCaptioner
+from app.vision.vision_service import VisionService
+from app.vision.vision_worker_manager import VisionWorkerManager
 from configs.agent_settings import (
     AGENT_DB_PATH,
     MEMORY_FAISS_PATH,
+    CHAT_IMAGES_DIR,
 )
 
 from configs.knowledge_settings import (
@@ -29,7 +33,7 @@ from configs.knowledge_settings import (
 )
 
 from app.ranking.reranker import MemoryReranker
-from configs.model_settings import CHAT_MODEL
+from configs.model_settings import CHAT_LLM, CHAT_VLM
 
 
 class AgentContext:
@@ -56,9 +60,29 @@ class AgentContext:
         # LLM model manager for memory extractor, query rewriter
         self.model_manager = ModelManager(
             backend="Unsloth",
-            model_name=CHAT_MODEL,
+            model_name=CHAT_LLM,
             tool_registry=self.tool_registry,
         )
+
+        # ---------------------------------------------------------
+        # Vision process pipeline
+        # ---------------------------------------------------------
+        self.vision_worker_manager = VisionWorkerManager()
+
+        self.vision_captioner = VisionCaptioner(
+            worker_manager=self.vision_worker_manager,
+        )
+
+        self.vision_service = VisionService(
+            captioner=self.vision_captioner,
+            # text_extractor=self.vision_text_extractor,
+            # embedder=self.vision_embedder,
+        )
+
+        # For testing purpose only, uncomment to test vision process pipeline
+        # self.vision_worker_manager.initialize()
+        # print(self.vision_service.extract(CHAT_IMAGES_DIR / "b33c8d44c4a7b4e14f2ed8f7dc6837b7.jpg"))
+
 
         # ---------------------------------------------------------
         # Conversation and Memory
@@ -124,8 +148,10 @@ class AgentContext:
         """
         resources = [
             ("Model Manager", self.model_manager),
+            ("Vision process pipeline", self.vision_worker_manager),
             ("Embedding Manager", self.embedding_manager),
             ("Retrieval Service", self.retrieval_service),
+            ("Cross Encoder Manager", self.cross_encoder_manager)
         ]
 
         for name, resource in resources:

@@ -5,10 +5,11 @@ Conversation service.
 from __future__ import annotations
 import dataclasses
 
-from app.api.schemas.conversation import (
-    Conversation,
-    ConversationResponse,
-    ConversationsResponse,
+# use_case only access to api schemas, not application schemas
+from app.api.schemas.api_conversation_schemas import (
+    ConversationDTO,
+    ConversationResponseDTO,
+    ConversationsResponseDTO,
 )
 from app.memory.conversation.conversation_service import ConversationService
 
@@ -28,9 +29,9 @@ class ConversationUseCase:
     ) -> None:
         self._conversation_service = conversation_service
 
-    def get_conversations(self) -> ConversationsResponse:
+    def get_conversations(self) -> ConversationsResponseDTO:
         """
-        Return all conversations together with the active conversation.
+        Return all conversations together with the active conversation' messages.
 
         This endpoint is used when the application starts so the frontend
         can initialize both the sidebar and chat view with a single request.
@@ -46,7 +47,7 @@ class ConversationUseCase:
             )
         
         response_items = [
-            Conversation(
+            ConversationDTO(
                 id=c.id,
                 title=c.title,
                 created_at=c.created_at,
@@ -61,22 +62,26 @@ class ConversationUseCase:
             for c in conversations
         ]
 
-        return ConversationsResponse(
+        return ConversationsResponseDTO(
             items=response_items
         )
 
     def get_conversation(
         self,
         conversation_id: str,
-    ) -> ConversationResponse:
+    ) -> ConversationResponseDTO:
         """
-        Return a conversation and all of its messages.
+        Return a single conversation with its messages.
+
+        Used when use swap conversation
         """
 
         conversation = self._conversation_service.get_conversation(
             conversation_id,
         )
 
-        return ConversationResponse(
-            data=conversation,
+        dto_data = ConversationDTO.model_validate(conversation)
+
+        return ConversationResponseDTO(
+            data=dto_data,
         )

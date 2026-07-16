@@ -63,3 +63,14 @@ class ModelManager:
             self.initialize()
 
         return self._model.invoke(*args, **kwargs)
+    
+
+    def invoke_structured(self, *args, **kwargs):
+        """
+        Used for internal application tasks such as query rewriting,
+        title generation, memory extraction, etc.
+        """
+        if self._model is None:
+            self.initialize()
+
+        return self._model.invoke_structured(*args, **kwargs)
