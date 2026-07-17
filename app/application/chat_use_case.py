@@ -14,6 +14,7 @@ import uuid
 from fastapi import File, UploadFile
 
 from app.memory.conversation.conversation_service import ConversationService
+from app.memory.long_term.memory_ingestion_service import MemoryIngestionService
 from app.vision.vision_service import VisionService
 from configs.agent_settings import CHAT_IMAGES_DIR
 
@@ -28,10 +29,13 @@ class ChatUseCase:
         workflow,
         conversation_service: ConversationService,
         vision_service: VisionService,
+        memory_ingestion_service: MemoryIngestionService,
     ):
         self.workflow = workflow
         self.conversation_service = conversation_service
         self.vision_service = vision_service
+        self.memory_ingestion_service = memory_ingestion_service
+
         os.makedirs(CHAT_IMAGES_DIR, exist_ok=True)
 
     def chat(
@@ -79,7 +83,17 @@ class ChatUseCase:
         }
         assistant_response = self.workflow.invoke(state)
 
-        return assistant_response["messages"][-1].content
+        assistant_message = assistant_response["messages"][-1]
+
+        history.append(
+            self.conversation_service.format_assistant_chat_message(
+                assistant_message.content
+            )
+        )
+
+        self.memory_ingestion_service.ingest(history)
+
+        return assistant_message.content
     
     
     def handle_attachments(

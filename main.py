@@ -49,6 +49,7 @@ async def lifespan(app: FastAPI):
         workflow=workflow,
         conversation_service=agent_context.conversation_service,
         vision_service=agent_context.vision_service,
+        memory_ingestion_service = agent_context.memory_ingestion_service,
     )
     conversation_use_case = ConversationUseCase(
         conversation_service=agent_context.conversation_service,
