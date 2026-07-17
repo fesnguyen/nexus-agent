@@ -3,6 +3,7 @@ import asyncio
 from app.memory.conversation.conversation_service import ConversationService
 from app.memory.conversation.conversation_store import ConversationStore
 from app.memory.long_term.extractor import MemoryExtractor
+from app.memory.long_term.memory_ingestion_service import MemoryIngestionService
 from app.models.cross_encoder_manager import CrossEncoderManager
 from app.models.model_manager import ModelManager
 from app.models.embedding_manager import EmbeddingManager
@@ -121,6 +122,10 @@ class AgentContext:
 
         self.memory_extractor = MemoryExtractor(self.model_manager)
 
+        self.memory_ingestion_service = MemoryIngestionService(
+            extractor=self.memory_extractor,
+            memory_manager=self.memory_manager,
+        )
 
         # ---------------------------------------------------------
         # RAG

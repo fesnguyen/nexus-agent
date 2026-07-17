@@ -270,14 +270,8 @@ class ConversationService:
 
                 case ("assistant", "chat"):
                     history.append(
-                        AIMessage(
-                            content=json.dumps(
-                                {
-                                    "thought": "Ignored",
-                                    "response": row["content"],
-                                    "tool_calls": [],
-                                }
-                            )
+                        self.format_assistant_chat_message(
+                            row["content"]
                         )
                     )
 
@@ -315,6 +309,17 @@ class ConversationService:
 
         return history
     
+
+    def format_assistant_chat_message(self, msg_content: str):
+        return AIMessage(
+            content=json.dumps(
+                {
+                    "thought": "Ignored",
+                    "response": msg_content,
+                    "tool_calls": [],
+                }
+            )
+        )
 
     def get_conversation_attachments(
         self,

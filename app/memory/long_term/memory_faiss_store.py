@@ -123,7 +123,7 @@ class MemoryFaissStore(BaseEmbedding):
         self,
     ) -> None:
 
-        self.get_index().parent.mkdir(
+        self.index_path.parent.mkdir(
             parents=True,
             exist_ok=True,
         )

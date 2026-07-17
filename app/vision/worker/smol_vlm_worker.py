@@ -67,17 +67,6 @@ class SmolVLMWorker(BaseVisionWorker):
             attn_implementation="sdpa",
         ).to(self._device)
 
-        print("Model dtype:", self._model.dtype)
-        print("Vision tower dtype:", self._model.model.vision_model.dtype)
-
-        for name, tensor in self._model.named_buffers():
-            if tensor.is_floating_point():
-                print(name, tensor.dtype)
-
-        for name, param in self._model.named_parameters():
-            if param.dtype != torch.bfloat16:
-                print(name, param.dtype)
-
         self._model.eval()
 
         self._loaded = True

@@ -22,7 +22,7 @@ class BaseCrossEncoder(ABC):
     @property
     def cross_encoder(self) -> CrossEncoder:
         return self._cross_encoder_manager.get_model(
-            self._cross_encoder_model,
+            self._model_name,
         )
 
     def predict(

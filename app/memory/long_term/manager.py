@@ -1,5 +1,6 @@
 from app.memory.long_term.base import BaseMemoryStore
 from app.memory.long_term.memory_faiss_store import MemoryFaissStore
+from app.memory.long_term.models import Memory, MemoryExtractionResult
 from app.ranking.reranker import MemoryReranker
 
 
@@ -30,6 +31,45 @@ class MemoryManager:
         self.memory_store = memory_store
         self.faiss_store = faiss_store
         self.reranker = reranker
+
+    
+    def save(
+        self,
+        extracted_memories: list[Memory],
+    ) -> None:
+        """
+        Persist memories into long-term storage and
+        update the semantic index.
+        """
+
+        if not extracted_memories:
+            return
+
+        self.memory_store.save(extracted_memories)
+
+        faiss_items = []
+
+        for memory in extracted_memories:
+
+            faiss_id = self.memory_store.get_next_faiss_id()
+
+            self.memory_store.save_faiss_mapping(
+                faiss_id=faiss_id,
+                memory_id=memory.id,
+            )
+
+            faiss_items.append(
+                (
+                    faiss_id,
+                    memory.content,
+                )
+            )
+
+        self.faiss_store.add_many(
+            faiss_items,
+        )
+
+        self.faiss_store.save()
 
     def retrieve_context(
         self,
